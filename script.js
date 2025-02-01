@@ -1,29 +1,19 @@
 // -------------------------------
-// Data for Pathfinder Classes
+// Data for Pathfinder Classes (New Dataset)
 // -------------------------------
 const classData = [
-  {"class": "Alchemist", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Barbarian", "traits": ["none"], "traditions": ["none"]},
   {"class": "Bard", "traits": ["occult"], "traditions": ["occult"]},
   {"class": "Champion", "traits": ["divine"], "traditions": ["divine"]},
   {"class": "Cleric", "traits": ["divine"], "traditions": ["divine"]},
   {"class": "Druid", "traits": ["primal"], "traditions": ["primal"]},
-  {"class": "Fighter", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Gunslinger", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Inventor", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Investigator", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Kineticist", "traits": ["elemental"], "traditions": ["none"]},
   {"class": "Magus", "traits": ["arcane"], "traditions": ["arcane"]},
-  {"class": "Monk", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Oracle", "traits": ["divine"], "traditions": ["divine"]},
+  {"class": "Oracle", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
   {"class": "Psychic", "traits": ["occult"], "traditions": ["occult"]},
   {"class": "Ranger", "traits": ["primal"], "traditions": ["primal"]},
-  {"class": "Rogue", "traits": ["none"], "traditions": ["none"]},
-  {"class": "Sorcerer", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["varies"]},
-  {"class": "Summoner", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["varies"]},
-  {"class": "Swashbuckler", "traits": ["none"], "traditions": ["none"]},
+  {"class": "Sorcerer", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
+  {"class": "Summoner", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
   {"class": "Thaumaturge", "traits": ["occult"], "traditions": ["occult"]},
-  {"class": "Witch", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["varies"]},
+  {"class": "Witch", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
   {"class": "Wizard", "traits": ["arcane"], "traditions": ["arcane"]}
 ];
 
@@ -32,7 +22,8 @@ const classData = [
 // -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-let expandedLevel = localStorage.getItem("expandedLevel") || null;
+// Force all groups to be collapsed initially.
+let expandedLevel = null;
 
 // -------------------------------
 // Helper Functions
@@ -62,7 +53,7 @@ function getActionBadgeHtml(spell, sizeClass) {
 }
 
 // -------------------------------
-// Populate Class Dropdown (for modal filter)
+// Populate Class Dropdown
 // -------------------------------
 function populateClassSelect() {
   const classSelect = document.getElementById('classSelect');
@@ -89,6 +80,7 @@ document.getElementById('classSelect').addEventListener('change', function() {
     const classObj = classData.find(item => item.class === selected);
     let associations = [];
     if (classObj) {
+      // Merge traits and traditions, ignoring "none"
       if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
         associations = associations.concat(classObj.traits);
       }
@@ -135,11 +127,16 @@ function renderSpells() {
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
-    headerDiv.innerHTML = `<div class="flex justify-between items-center">
-      <span>${level === '0' ? 'Cantrips' : `Level ${level}`} 
-      <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span></span>
-      <span class="transform transition-transform duration-200 ${expandedLevel === level ? 'rotate-180' : ''}">▼</span>
-      </div>`;
+    // Use the requested Unicode icons:
+    headerDiv.innerHTML = `
+      <div class="flex justify-between items-center">
+        <span>${level === '0' ? 'Cantrips' : `Level ${level}`} <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span></span>
+        <span class="transition-colors duration-200">
+          ${expandedLevel === level ? '&#9660;' : '&#9654;'}
+        </span>
+      </div>
+    `;
+    headerDiv.style.cursor = "pointer";
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
     const spellsContainer = document.createElement('div');
@@ -153,13 +150,16 @@ function renderSpells() {
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
-      card.innerHTML = `<div class="flex justify-between items-center">
-        <div>
-          <div class="font-medium">${spell.name}</div>
-          <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
+      card.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-medium">${spell.name}</div>
+            <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
+          </div>
+          ${getActionBadgeHtml(spell, "text-xs")}
         </div>
-        ${getActionBadgeHtml(spell, "text-xs")}
-      </div>`;
+      `;
+      card.style.cursor = "pointer";
       card.addEventListener('click', (e) => {
         e.stopPropagation();
         showSpellDetails(spell);
@@ -169,6 +169,16 @@ function renderSpells() {
     groupDiv.appendChild(spellsContainer);
     container.appendChild(groupDiv);
   });
+}
+
+function toggleLevel(level) {
+  if (expandedLevel === level) {
+    expandedLevel = null;
+  } else {
+    expandedLevel = level;
+  }
+  localStorage.setItem("expandedLevel", expandedLevel || '');
+  renderSpells();
 }
 
 function showSpellDetails(spell) {
@@ -246,7 +256,6 @@ function updateActiveFiltersDisplay() {
     searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
     activeContainer.appendChild(searchTag);
   }
-  // Traditions (from modal dropdown)
   const traditionsValue = document.getElementById('traditionsSelect').value;
   if (traditionsValue !== "All") {
     const traditionsTag = document.createElement('span');
@@ -254,11 +263,9 @@ function updateActiveFiltersDisplay() {
     traditionsTag.innerHTML = `Traditions: ${traditionsValue} <span class="ml-2 cursor-pointer" data-filter="traditions">×</span>`;
     activeContainer.appendChild(traditionsTag);
   }
-  // Class filter
   const selectedClass = document.getElementById('classSelect').value;
   if (selectedClass !== "All") {
     let classText = `Class: ${selectedClass}`;
-    // If an association is selected, append it in parentheses.
     const selectedAssociation = document.getElementById('associationSelect').value;
     if (selectedAssociation !== "All") {
       classText += ` (${selectedAssociation})`;
@@ -270,6 +277,9 @@ function updateActiveFiltersDisplay() {
   }
 }
 
+// -------------------------------
+// Local Storage for Filter Selections
+// -------------------------------
 function saveFiltersToLocalStorage() {
   const searchTerm = document.getElementById('searchInput').value;
   const traditionsValue = document.getElementById('traditionsSelect').value;
@@ -310,15 +320,15 @@ function applyFilters() {
   const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
   
   filteredSpells = allSpells.filter(spell => {
-    // Filter by search term in spell name or traits
+    // Search Filter: check name and traits
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
       const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
       if (!inName && !inTraits) return false;
     }
-    // Level Filter: (always include cantrips)
+    // Level Filter: always include cantrips; for spells, level must be <= maxLevel
     if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) return false;
-    // Actions Filter:
+    // Actions Filter
     if (actionsSelectValue !== "All") {
       const selectedAction = parseInt(actionsSelectValue, 10);
       if (!spell.action) return false;
@@ -335,11 +345,11 @@ function applyFilters() {
         if (spellAction !== selectedAction) return false;
       }
     }
-    // Range Filter:
+    // Range Filter
     if (rangeValue !== "all") {
       if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue) return false;
     }
-    // Traditions Filter (from modal dropdown):
+    // Traditions Filter (if selected in modal)
     if (traditionsValue !== "all") {
       const inTraditions = (spell.traditions || []).some(t => t.toLowerCase() === traditionsValue);
       const inTraits = (spell.traits || []).some(t => t.toLowerCase() === traditionsValue);
@@ -347,7 +357,6 @@ function applyFilters() {
     }
     // Class & Association Filter:
     if (selectedClass !== "All") {
-      // Look up the associations for this class
       const classObj = classData.find(item => item.class === selectedClass);
       let classAssociations = [];
       if (classObj) {
@@ -358,14 +367,14 @@ function applyFilters() {
           classAssociations = classAssociations.concat(classObj.traditions.map(t => t.toLowerCase()));
         }
       }
-      // If an association is specifically chosen, use it
       if (selectedAssociation !== "all") {
-        if (!((spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
-              (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation))) {
-          return false;
-        }
+        // Spell must include the selected association in either traits or traditions.
+        const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
+                           (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
+        if (!assocMatch) return false;
       } else {
-        // If no specific association is chosen, require that the spell has at least one association from classAssociations.
+        // If no specific association is chosen, then if classAssociations exist,
+        // require that the spell has at least one association from that list.
         if (classAssociations.length > 0) {
           const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
                                  (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
