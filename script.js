@@ -313,6 +313,7 @@ function saveFiltersToLocalStorage() {
         rangeValue: document.getElementById('rangeSelect').value,
         selectedClass: document.getElementById('classSelect').value,
         selectedAssociation: document.getElementById('associationSelect').value,
+        selectedTradition: document.getElementById('traditionSelect')?.value   // Add this line
     };
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
