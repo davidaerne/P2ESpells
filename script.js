@@ -39,7 +39,6 @@ function renderSpells() {
         return;
     }
 
-    // Group spells by level
     const spellsByLevel = filteredSpells.reduce((acc, spell) => {
         const level = getSpellLevel(spell);
         if (!acc[level]) acc[level] = [];
@@ -47,12 +46,10 @@ function renderSpells() {
         return acc;
     }, {});
 
-    // Sort levels in ascending order
     Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b)).forEach(level => {
         const groupDiv = document.createElement('div');
         groupDiv.className = "bg-white rounded-lg shadow mb-4";
 
-        // Accordion Header (Spell Level)
         const headerDiv = document.createElement('div');
         headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
         headerDiv.innerHTML = `
@@ -66,11 +63,9 @@ function renderSpells() {
         headerDiv.addEventListener('click', () => toggleLevel(level));
         groupDiv.appendChild(headerDiv);
 
-        // Spell List Container
         const spellsContainer = document.createElement('div');
         spellsContainer.className = `divide-y ${expandedLevel === level ? '' : 'hidden'}`;
 
-        // Title Row (Includes "Actions" sorting)
         if (expandedLevel === level) {
             const titleRow = document.createElement('div');
             titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
@@ -83,10 +78,10 @@ function renderSpells() {
             spellsContainer.appendChild(titleRow);
         }
 
-        // Spell Cards
         spellsByLevel[level].forEach(spell => {
             const card = document.createElement('div');
-            card.className = "p-4 hover:bg-gray-50 cursor-pointer";
+            card.className = "p-4 hover:bg-gray-50 cursor-pointer spell-card";
+            card.dataset.spellIndex = allSpells.indexOf(spell); // Store index for reference
             card.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
@@ -96,7 +91,6 @@ function renderSpells() {
                     <span>${spell.action ? spell.action : ''}</span>
                 </div>
             `;
-            card.addEventListener('click', () => showSpellDetails(spell));
             spellsContainer.appendChild(card);
         });
 
@@ -104,7 +98,22 @@ function renderSpells() {
         container.appendChild(groupDiv);
     });
 
-    attachSortingEvent(); // Ensure sorting event is attached
+    attachSpellClickEvents(); // ✅ Ensure spells are clickable
+    attachSortingEvent(); // ✅ Ensure sorting event is reattached
+}
+
+// -------------------------------
+// Attach Click Events to Spells
+// -------------------------------
+function attachSpellClickEvents() {
+    document.querySelectorAll('.spell-card').forEach(card => {
+        card.addEventListener('click', function () {
+            const spellIndex = this.dataset.spellIndex;
+            if (spellIndex !== undefined) {
+                showSpellDetails(allSpells[spellIndex]);
+            }
+        });
+    });
 }
 
 // -------------------------------
@@ -167,4 +176,24 @@ async function fetchSpells() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     fetchSpells();
+    setupEventListeners();
 });
+
+// -------------------------------
+// Setup Event Listeners
+// -------------------------------
+function setupEventListeners() {
+    document.getElementById('filterBtn').addEventListener('click', () => {
+        console.log("✅ Filter button clicked!");
+        document.getElementById('filterModal').classList.remove('hidden');
+    });
+
+    document.getElementById('closeFilterBtn').addEventListener('click', () => {
+        document.getElementById('filterModal').classList.add('hidden');
+    });
+
+    document.getElementById('applyFilterBtn').addEventListener('click', () => {
+        applyFilters();
+        document.getElementById('filterModal').classList.add('hidden');
+    });
+}
