@@ -476,18 +476,22 @@ function setupEventListeners() {
   });
   
   // Active Filter: Actions sorting toggle.
-  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
+document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
     if (e.target && e.target.getAttribute('data-filter') === "actions-sort") {
-      actionSortAsc = !actionSortAsc;
-      // Sort filteredSpells by numeric action value.
-      filteredSpells.sort((a, b) => {
-        const aVal = parseInt(a.action, 10) || 0;
-        const bVal = parseInt(b.action, 10) || 0;
-        return actionSortAsc ? aVal - bVal : bVal - aVal;
-      });
-      renderSpells();
+        e.preventDefault(); // Prevent any navigation behavior
+        actionSortAsc = !actionSortAsc;
+        
+        // Sort filteredSpells by numeric action value
+        filteredSpells.sort((a, b) => {
+            const aVal = parseInt(a.action, 10) || 0;
+            const bVal = parseInt(b.action, 10) || 0;
+            return actionSortAsc ? aVal - bVal : bVal - aVal;
+        });
+
+        renderSpells();
     }
-  });
+});
+
   
   // Dynamic search: as the user types, apply filters.
   document.getElementById('searchInput').addEventListener('input', () => {
