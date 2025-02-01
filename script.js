@@ -327,16 +327,8 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
+        document.getElementById('associationSelect').value = filterState.selectedAssociation;
         document.getElementById('classSelect').dispatchEvent(new Event('change'));
-        
-        // Wait for the association select to be populated before setting its value
-        setTimeout(() => {
-            document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
-            if (document.getElementById('traditionSelect')) {
-                document.getElementById('traditionSelect').value = filterState.selectedTradition || "All";
-            }
-            applyFilters(); // Apply filters after all values are set
-        }, 0);
     }
 }
 
