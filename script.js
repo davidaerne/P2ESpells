@@ -263,24 +263,43 @@ function applyFilters() {
 function initializeLevelSort(level) {
     if (!levelSortStates[level]) {
         levelSortStates[level] = {
-            isDesc: true // Start with descending sort
+            isDesc: true,   // Start with descending sort
+            isActive: false // Track if sorting is active
         };
     }
 }
 
+// Update the toggle function
 function toggleLevelSort(level) {
     initializeLevelSort(level);
-    levelSortStates[level].isDesc = !levelSortStates[level].isDesc;
+    const state = levelSortStates[level];
+    
+    if (!state.isActive) {
+        // If no sort, start with DESC
+        state.isActive = true;
+        state.isDesc = true;
+    } else if (state.isDesc) {
+        // If DESC, switch to ASC
+        state.isDesc = false;
+    } else {
+        // If ASC, clear sort
+        state.isActive = false;
+    }
 }
 
+// Update the sort function
 function sortSpellsByAction(spells, level) {
     initializeLevelSort(level);
-    const isDesc = levelSortStates[level].isDesc;
+    const state = levelSortStates[level];
+    
+    if (!state.isActive) {
+        return spells; // Return original order if no sort is active
+    }
     
     return [...spells].sort((a, b) => {
         const aVal = parseInt(a.action, 10) || 0;
         const bVal = parseInt(b.action, 10) || 0;
-        return isDesc ? bVal - aVal : aVal - bVal;
+        return state.isDesc ? bVal - aVal : aVal - bVal;
     });
 }
 
@@ -373,7 +392,9 @@ function renderSpells() {
                         <span class="sort-actions-link cursor-pointer hover:text-blue-600" 
                               data-filter="actions-sort" 
                               data-level="${level}">
-                            Actions ${sortDirection}
+                            Actions ${levelSortStates[level].isActive 
+                                    ? (levelSortStates[level].isDesc ? ' ↓' : ' ↑') 
+                                    : ''}
                         </span>
                     </div>
                 `;
