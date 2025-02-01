@@ -82,6 +82,9 @@ function updateAssociationSelect() {
     const selected = document.getElementById('classSelect').value;
     const associationContainer = document.getElementById('associationContainer');
     const associationSelect = document.getElementById('associationSelect');
+    const traditionContainer = document.getElementById('traditionContainer');
+    const traditionSelect = document.getElementById('traditionSelect');
+
     
     if (selected === "All") {
         associationContainer.style.display = "none";
