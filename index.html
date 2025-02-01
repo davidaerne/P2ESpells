@@ -13,23 +13,25 @@
   <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <header class="bg-white shadow-lg rounded-lg p-4 mb-2">
-      <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold">P2E Spells</h1>
-        <div class="flex gap-2">
+      <!-- Top row: Title, Search Box, Filter Button -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <!-- Title -->
+        <h1 class="text-2xl font-bold mb-2 sm:mb-0">P2E Spells</h1>
+        <!-- Right-side container with search and filter button -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <!-- Shortened Search Box -->
+          <input type="text" id="searchInput" class="w-full sm:w-64 p-2 border rounded" placeholder="Search spells..." />
+          <!-- Filter Button -->
           <button id="filterBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Filter
           </button>
         </div>
       </div>
-      <!-- Search Box (moved to top of main page) -->
-      <div id="searchContainer" class="mt-2">
-        <input type="text" id="searchInput" class="w-full p-2 border rounded" placeholder="Search spells..." />
-      </div>
-      <!-- Active filters display -->
+      <!-- Second row: Active Filters -->
       <div id="activeFilterDisplay" class="mt-2 flex flex-wrap gap-2"></div>
     </header>
     
-    <!-- Filter Modal -->
+    <!-- Filter Modal (unchanged from previous version) -->
     <div id="filterModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
       <div class="bg-white rounded-lg max-w-md w-full p-6">
         <div class="flex justify-between items-center mb-4">
@@ -51,7 +53,7 @@
               <option value="All">All</option>
             </select>
           </div>
-          <!-- Traditions dropdown removed -->
+          <!-- Traditions Dropdown removed -->
           <!-- Max Level Dropdown -->
           <div>
             <label for="maxLevelSelect" class="block mb-2 text-sm font-medium">Max Level</label>
@@ -101,7 +103,7 @@
       </div>
     </div>
     
-    <!-- Spell Detail Modal -->
+    <!-- Spell Detail Modal (unchanged) -->
     <div id="spellModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
       <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
