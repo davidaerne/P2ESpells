@@ -24,7 +24,7 @@ function getSpellLevel(spell) {
  * If both spell.action and spell.actionMax exist and differ, returns "action-actionMax".
  * Otherwise, returns just the action.
  * The sizeClass parameter lets you specify Tailwind classes (e.g. "text-xs" for small text).
- * (Note: The circle styling has been removed.)
+ * (Note: The circular styling has been removed so that longer text isn’t clipped.)
  */
 function getActionBadgeHtml(spell, sizeClass) {
   if (spell.action) {
@@ -124,7 +124,6 @@ function renderSpells() {
       `;
       // Attach the click event directly to show spell details
       card.addEventListener('click', (e) => {
-        // Prevent the event from bubbling up to the header (which toggles the group)
         e.stopPropagation();
         showSpellDetails(spell);
       });
@@ -321,14 +320,12 @@ function applyFilters() {
     // If a specific actions value is selected, then check:
     if (actionsSelectValue !== "All") {
       const selectedAction = parseInt(actionsSelectValue, 10);
-      // If the spell has no action property, exclude it.
       if (!spell.action) return false;
       const spellAction = parseInt(spell.action, 10);
       if (isNaN(spellAction)) return false;
       if (spell.actionMax) {
         const spellActionMax = parseInt(spell.actionMax, 10);
         if (!isNaN(spellActionMax)) {
-          // Include the spell if selectedAction is between spellAction and spellActionMax (inclusive)
           if (selectedAction < spellAction || selectedAction > spellActionMax) return false;
         } else {
           if (spellAction !== selectedAction) return false;
