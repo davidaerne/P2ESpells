@@ -52,9 +52,16 @@ function getActionBadgeHtml(spell, sizeClass) {
 }
 
 function formatActionDetails(text) {
-    return text.replace(/\|(\d+)\|/g, (match, number) => 
+    // First handle action numbers
+    text = text.replace(/\|(\d+)\|/g, (match, number) => 
         `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`
     );
+    
+    // Then handle bold text (both single and double asterisks)
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Double asterisks
+    text = text.replace(/\*(.*?)\*/g, '<strong>$1</strong>');     // Single asterisks
+    
+    return text;
 }
 
 // -------------------------------
