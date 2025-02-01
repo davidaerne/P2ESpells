@@ -542,6 +542,7 @@ function setupEventListeners() {
             
             applyFilters(); // This will also update the active filters display
         }
+     });
 }
 // -------------------------------
 // Initialize
