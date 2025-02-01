@@ -17,13 +17,15 @@ const classData = [
   {"class": "Wizard", "traits": ["arcane"], "traditions": ["arcane"]}
 ];
 
+// -------------------------------
 // Global Variables
+// -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-let expandedLevel = localStorage.getItem("expandedLevel") || null;
-let actionSortAsc = true; // true for ascending, false for descending.
-let sortActions = false;  // Indicates whether the user has clicked the "Actions" link.
-
+// Force no group expanded by default (do not restore from localStorage)
+let expandedLevel = null;
+// Global sort state for actions (true: ascending, false: descending)
+let actionSortAsc = true;
 
 // -------------------------------
 // Helper Functions
@@ -53,8 +55,7 @@ function getActionBadgeHtml(spell, sizeClass) {
 }
 
 /**
- * Wraps any numbers in the description that are surrounded by pipes (e.g. |1|) 
- * in a blue circle.
+ * Wraps any numbers surrounded by pipes (e.g. |1|) in a blue circle.
  */
 function formatActionDetails(text) {
   return text.replace(/\|(\d+)\|/g, function(match, number) {
@@ -138,8 +139,6 @@ function renderSpells() {
   sortedLevels.forEach(level => {
     const groupDiv = document.createElement('div');
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
-
-    // Accordion header with Unicode icons:
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
     headerDiv.innerHTML = `
@@ -155,40 +154,31 @@ function renderSpells() {
     headerDiv.style.cursor = "pointer";
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
-
-    // Container for spells in this group:
     const spellsContainer = document.createElement('div');
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
-
-    // Title row with "Spell Name" and a clickable "Actions" link for sorting:
     if (expandedLevel === level) {
       const titleRow = document.createElement('div');
       titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
       titleRow.innerHTML = `<div>Spell Name</div>
                             <div>
                               <a href="#" class="sort-actions-link underline">Actions</a>
+                              <span class="ml-2 cursor-pointer" data-filter="actions-remove">×</span>
                             </div>`;
-      // Add an event listener to toggle sort order for actions.
+      // Attach event listener for sorting actions.
       titleRow.querySelector('.sort-actions-link').addEventListener('click', function(e) {
         e.preventDefault();
-        // Toggle the global sort-by-actions state.
-        sortActions = true;
+        // Toggle sorting order for actions.
         actionSortAsc = !actionSortAsc;
+        // Sort the spells in this level group by their action cost.
+        spellsByLevel[level].sort((a, b) => {
+          const aVal = parseInt(a.action, 10) || 0;
+          const bVal = parseInt(b.action, 10) || 0;
+          return actionSortAsc ? aVal - bVal : bVal - aVal;
+        });
         renderSpells();
       });
       spellsContainer.appendChild(titleRow);
     }
-
-    // For each spell, if sortActions is true then sort the spells in this group by their action cost.
-    if (sortActions) {
-      spellsByLevel[level].sort((a, b) => {
-        // Parse the action value (default to 0 if missing)
-        const aAction = parseInt(a.action, 10) || 0;
-        const bAction = parseInt(b.action, 10) || 0;
-        return actionSortAsc ? aAction - bAction : bAction - aAction;
-      });
-    }
-
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
@@ -208,12 +198,20 @@ function renderSpells() {
       });
       spellsContainer.appendChild(card);
     });
-
     groupDiv.appendChild(spellsContainer);
     container.appendChild(groupDiv);
   });
 }
 
+function toggleLevel(level) {
+  if (expandedLevel === level) {
+    expandedLevel = null;
+  } else {
+    expandedLevel = level;
+  }
+  localStorage.setItem("expandedLevel", expandedLevel || '');
+  renderSpells();
+}
 
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
@@ -230,7 +228,6 @@ function showSpellDetails(spell) {
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Apply formatting to pipe-wrapped numbers:
   description = formatActionDetails(description);
   let detailsHtml = '';
   detailsHtml += `<div><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
@@ -260,15 +257,6 @@ function showSpellDetails(spell) {
   modal.classList.remove('hidden');
 }
 
-/**
- * Wrap any numbers surrounded by pipes (e.g., |1|) in a blue circle.
- */
-function formatActionDetails(text) {
-  return text.replace(/\|(\d+)\|/g, function(match, number) {
-    return `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`;
-  });
-}
-
 // -------------------------------
 // Active Filters Display
 // -------------------------------
@@ -286,7 +274,6 @@ function updateActiveFiltersDisplay() {
     }
     const classTag = document.createElement('span');
     classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    // No removal icon for Class.
     classTag.textContent = classText;
     activeContainer.appendChild(classTag);
   }
@@ -298,12 +285,14 @@ function updateActiveFiltersDisplay() {
   spellLevelTag.textContent = "Spell Level " + maxLevel;
   activeContainer.appendChild(spellLevelTag);
   
-  // Actions filter (removable)
+  // Actions filter (removable and clickable for sorting)
   const actionsValue = document.getElementById('actionsSelect').value;
   if (actionsValue !== "All") {
     const actionsTag = document.createElement('span');
     actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    actionsTag.innerHTML = `Actions: ${actionsValue} <span class="ml-2 cursor-pointer" data-filter="actions">×</span>`;
+    // Create two clickable elements: one for sorting, one for removal.
+    actionsTag.innerHTML = `<span data-filter="actions-sort" class="cursor-pointer underline">Actions: ${actionsValue}</span>
+                            <span class="ml-2 cursor-pointer" data-filter="actions-remove">×</span>`;
     activeContainer.appendChild(actionsTag);
   }
   
@@ -349,7 +338,7 @@ function loadFiltersFromLocalStorage() {
     document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
     document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
     document.getElementById('classSelect').value = filterState.selectedClass || "All";
-    // Trigger change event so that the association dropdown is repopulated.
+    // Trigger change event so association dropdown is repopulated.
     document.getElementById('classSelect').dispatchEvent(new Event('change'));
     document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
   }
@@ -374,7 +363,7 @@ function applyFilters() {
       const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
       if (!inName && !inTraits) return false;
     }
-    // Level Filter: always include cantrips; for spells, level must be <= maxLevel
+    // Level Filter: include cantrips; for spells, level must be <= maxLevel
     if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) return false;
     // Actions Filter
     if (actionsSelectValue !== "All") {
@@ -397,7 +386,7 @@ function applyFilters() {
     if (rangeValue !== "all") {
       if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue) return false;
     }
-    // Class & Association Filter:
+    // Class & Association Filter
     if (selectedClass !== "All") {
       const classObj = classData.find(item => item.class === selectedClass);
       let classAssociations = [];
@@ -459,7 +448,7 @@ function setupEventListeners() {
     document.getElementById('spellModal').classList.add('hidden');
   });
   
-  // Active filter tags (clear individual filters)
+  // Active Filters: handle removal clicks.
   document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
     if (e.target && e.target.getAttribute('data-filter')) {
       const filterType = e.target.getAttribute('data-filter');
@@ -467,12 +456,26 @@ function setupEventListeners() {
         document.getElementById('searchInput').value = '';
       } else if (filterType === 'range') {
         document.getElementById('rangeSelect').value = 'All';
-      } else if (filterType === 'class') {
-        // Class is non-removable.
       } else if (filterType === 'association') {
         document.getElementById('associationSelect').value = 'All';
+      } else if (filterType === 'actions-remove') {
+        document.getElementById('actionsSelect').value = 'All';
       }
       applyFilters();
+    }
+  });
+  
+  // Active Filters: handle sorting for actions.
+  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
+    if (e.target && e.target.getAttribute('data-filter') === "actions-sort") {
+      actionSortAsc = !actionSortAsc;
+      // Sort filteredSpells by the numeric action cost.
+      filteredSpells.sort((a, b) => {
+        const aVal = parseInt(a.action, 10) || 0;
+        const bVal = parseInt(b.action, 10) || 0;
+        return actionSortAsc ? aVal - bVal : bVal - aVal;
+      });
+      renderSpells();
     }
   });
   
