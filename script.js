@@ -19,7 +19,7 @@ function getSpellLevel(spell) {
   return isNaN(num) ? -1 : num;
 }
 
-// Toggle spell level expansion and save the state to localStorage
+// Toggle spell level expansion and save state to localStorage
 function toggleLevel(level) {
   if (expandedLevel === level) {
     expandedLevel = null;
@@ -47,7 +47,7 @@ function renderSpells() {
     return;
   }
 
-  // Group spells by level
+  // Group spells by level (cantrips have level 0)
   const spellsByLevel = filteredSpells.reduce((acc, spell) => {
     const level = getSpellLevel(spell);
     if (!acc[level]) acc[level] = [];
@@ -55,15 +55,15 @@ function renderSpells() {
     return acc;
   }, {});
 
-  // Sort the levels numerically
+  // Sort levels numerically
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
 
   sortedLevels.forEach(level => {
-    // Create the group container
+    // Create group container
     const groupDiv = document.createElement('div');
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
 
-    // Create the header that toggles expansion
+    // Create header that toggles expansion
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
     headerDiv.innerHTML = `
@@ -78,11 +78,11 @@ function renderSpells() {
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
 
-    // Create the container for the spell cards
+    // Create container for spell cards
     const spellsContainer = document.createElement('div');
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
 
-    // For each spell, create a card element
+    // Create each spell card
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
@@ -90,10 +90,9 @@ function renderSpells() {
         <div class="font-medium">${spell.name}</div>
         <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
       `;
-      // Attach the click event directly to show spell details
+      // Attach click event to open modal with spell details
       card.addEventListener('click', (e) => {
-        // Prevent the event from bubbling up to the header (which toggles the group)
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent header toggle
         showSpellDetails(spell);
       });
       spellsContainer.appendChild(card);
@@ -104,7 +103,7 @@ function renderSpells() {
   });
 }
 
-// Show spell details in a modal window
+// Show spell details in the modal
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
@@ -114,7 +113,7 @@ function showSpellDetails(spell) {
   title.textContent = spell.name;
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
 
-  // Process description to replace **text** with <strong>text</strong>
+  // Replace any **bold** markdown with HTML <strong> tags
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
@@ -157,6 +156,62 @@ function showSpellDetails(spell) {
 }
 
 // -------------------------------
+// Active Filters Management
+// -------------------------------
+
+function updateActiveFilters() {
+  const activeFiltersContainer = document.getElementById('activeFilters');
+  activeFiltersContainer.innerHTML = '';
+  const filters = [];
+  
+  const searchValue = document.getElementById('searchInput').value.trim();
+  const typeValue = document.getElementById('typeSelect').value;
+  const levelValue = document.getElementById('levelSelect').value;
+  const traditionsSelect = document.getElementById('traditionsSelect');
+  const traditionsValues = Array.from(traditionsSelect.selectedOptions).map(o => o.value);
+  
+  if (searchValue) {
+    filters.push({name: 'Search', value: searchValue});
+  }
+  if (typeValue !== 'All') {
+    filters.push({name: 'Type', value: typeValue});
+  }
+  // Always show the level filter
+  filters.push({name: 'Level', value: levelValue});
+  if (traditionsValues.length > 0) {
+    filters.push({name: 'Traditions', value: traditionsValues.join(', ')});
+  }
+  
+  if (filters.length > 0) {
+    const filtersHTML = filters.map(filter => {
+      return `<span class="bg-blue-100 text-blue-800 rounded px-2 py-1 mr-2 inline-flex items-center">
+        ${filter.name}: ${filter.value}
+        <button class="ml-1 text-blue-500 hover:text-blue-700" data-filter="${filter.name}">x</button>
+      </span>`;
+    }).join('');
+    activeFiltersContainer.innerHTML = filtersHTML;
+    // Attach click events for each "x" to reset that filter
+    activeFiltersContainer.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', function(){
+         const filterName = this.getAttribute('data-filter');
+         if (filterName === 'Search') {
+           document.getElementById('searchInput').value = '';
+         } else if (filterName === 'Type') {
+           document.getElementById('typeSelect').value = 'All';
+         } else if (filterName === 'Level') {
+           document.getElementById('levelSelect').value = '1';
+         } else if (filterName === 'Traditions') {
+           const traditionsSelect = document.getElementById('traditionsSelect');
+           Array.from(traditionsSelect.options).forEach(option => option.selected = false);
+         }
+         applyFilters();
+         updateActiveFilters();
+      });
+    });
+  }
+}
+
+// -------------------------------
 // Local Storage for Filter Selections
 // -------------------------------
 
@@ -164,10 +219,11 @@ function saveFiltersToLocalStorage() {
   const searchTerm = document.getElementById('searchInput').value;
   const type = document.getElementById('typeSelect').value;
   const sortBy = document.getElementById('sortSelect').value;
+  const level = document.getElementById('levelSelect').value;
   const traditionsSelect = document.getElementById('traditionsSelect');
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
 
-  const filterState = { searchTerm, type, sortBy, selectedTraditions };
+  const filterState = { searchTerm, type, sortBy, level, selectedTraditions };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
@@ -178,6 +234,7 @@ function loadFiltersFromLocalStorage() {
     document.getElementById('searchInput').value = filterState.searchTerm || '';
     document.getElementById('typeSelect').value = filterState.type || 'All';
     document.getElementById('sortSelect').value = filterState.sortBy || 'Level';
+    document.getElementById('levelSelect').value = filterState.level || '1';
     const traditionsSelect = document.getElementById('traditionsSelect');
     for (const option of traditionsSelect.options) {
       option.selected = filterState.selectedTraditions && filterState.selectedTraditions.includes(option.value);
@@ -192,6 +249,7 @@ function loadFiltersFromLocalStorage() {
 function applyFilters() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const type = document.getElementById('typeSelect').value;
+  const selectedLevel = document.getElementById('levelSelect').value;
   const sortBy = document.getElementById('sortSelect').value;
   const traditionsSelect = document.getElementById('traditionsSelect');
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
@@ -200,19 +258,29 @@ function applyFilters() {
     const traditions = (spell.traditions || []).map(t => t.toLowerCase());
     const traits = (spell.traits || []).map(t => t.toLowerCase());
     const combined = [...traditions, ...traits];
-
+    
     if (selectedTraditions.length > 0 && !selectedTraditions.some(t => combined.includes(t.toLowerCase()))) {
       return false;
     }
-    if (type === 'Cantrip' && !isCantrip(spell)) return false;
-    if (type === 'Spell' && isCantrip(spell)) return false;
-
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
       const inTraits = traits.some(t => t.includes(searchTerm));
       if (!inName && !inTraits) return false;
     }
-    return true;
+    
+    // Filtering based on Type and Level:
+    if (type === 'Cantrip') {
+      // Only show cantrips if Type is set to "Cantrip"
+      return isCantrip(spell);
+    } else if (type === 'Spell') {
+      // Show only non-cantrip spells that match the selected level
+      if (isCantrip(spell)) return false;
+      return parseInt(spell.level, 10) === parseInt(selectedLevel, 10);
+    } else { // type === 'All'
+      // Always show cantrips; for non-cantrips, show if they match the selected level
+      if (isCantrip(spell)) return true;
+      return parseInt(spell.level, 10) === parseInt(selectedLevel, 10);
+    }
   });
 
   if (sortBy === 'Level') {
@@ -223,19 +291,7 @@ function applyFilters() {
 
   saveFiltersToLocalStorage();
   renderSpells();
-}
-
-function clearFilters() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('typeSelect').value = 'All';
-  document.getElementById('sortSelect').value = 'Level';
-  const traditionsSelect = document.getElementById('traditionsSelect');
-  Array.from(traditionsSelect.options).forEach(option => option.selected = false);
-
-  localStorage.removeItem("spellFilterState");
-
-  filteredSpells = allSpells;
-  renderSpells();
+  updateActiveFilters();
 }
 
 // -------------------------------
@@ -255,8 +311,6 @@ function setupEventListeners() {
     applyFilters();
     document.getElementById('filterModal').classList.add('hidden');
   });
-
-  document.getElementById('clearFilterBtn').addEventListener('click', clearFilters);
 
   document.getElementById('spellModal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('spellModal')) {
