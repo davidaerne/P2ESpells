@@ -143,7 +143,7 @@ function showSpellDetails(spell) {
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
 
-  // If a nethysUrl is provided, make the title a clickable link with blue text and underline.
+  // If a nethysUrl is provided, make the title a clickable link styled in blue and underlined.
   if (spell.nethysUrl) {
     title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
   } else {
@@ -151,52 +151,75 @@ function showSpellDetails(spell) {
   }
 
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
-
-  // Prefix the actions badge with "Action Cost: "
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
 
-  // Process description to replace markdown bold (**text**) with <strong>text</strong>
+  // Process the description to convert markdown-style bold (**text**) to <strong>text</strong>
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  details.innerHTML = `
-    <div>
-      <div class="font-semibold">Traits</div>
-      <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
-    </div>
-    ${spell.cast ? `
-      <div>
-        <div class="font-semibold">Cast</div>
-        <div>${spell.cast}</div>
-      </div>
-    ` : ''}
-    ${spell.range ? `
-      <div>
-        <div class="font-semibold">Range</div>
-        <div>${spell.range}</div>
-      </div>
-    ` : ''}
-    ${spell.targets ? `
-      <div>
-        <div class="font-semibold">Targets</div>
-        <div>${spell.targets}</div>
-      </div>
-    ` : ''}
-    ${spell['saving throw'] ? `
-      <div>
-        <div class="font-semibold">Saving Throw</div>
-        <div>${spell['saving throw']}</div>
-      </div>
-    ` : ''}
-    <div>
-      <div class="font-semibold">Description</div>
-      <div class="whitespace-pre-wrap">${description}</div>
-    </div>
-  `;
+  // Build the details HTML. Only include rows for properties that have a value.
+  let detailsHtml = '';
+
+  // Traits (always shown)
+  detailsHtml += `<div>
+                    <div class="font-semibold">Traits</div>
+                    <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
+                  </div>`;
+
+  // Additional properties:
+  if (spell.cast) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Cast</div>
+                      <div>${spell.cast}</div>
+                    </div>`;
+  }
+  if (spell.area) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Area</div>
+                      <div>${spell.area}</div>
+                    </div>`;
+  }
+  if (spell.range) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Range</div>
+                      <div>${spell.range}</div>
+                    </div>`;
+  }
+  if (spell.duration) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Duration</div>
+                      <div>${spell.duration}</div>
+                    </div>`;
+  }
+  if (spell.defense) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Defense</div>
+                      <div>${spell.defense}</div>
+                    </div>`;
+  }
+  if (spell.targets) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Targets</div>
+                      <div>${spell.targets}</div>
+                    </div>`;
+  }
+  if (spell.trigger) {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Trigger</div>
+                      <div>${spell.trigger}</div>
+                    </div>`;
+  }
+
+  // Always show Description at the end.
+  detailsHtml += `<div>
+                    <div class="font-semibold">Description</div>
+                    <div class="whitespace-pre-wrap">${description}</div>
+                  </div>`;
+
+  details.innerHTML = detailsHtml;
 
   modal.classList.remove('hidden');
 }
-
 
 // -------------------------------
 // Active Filters Display
