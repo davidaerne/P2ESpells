@@ -76,7 +76,7 @@ function populateClassSelect() {
 }
 
 // -------------------------------
-// Update Association Dropdown
+// Update Association Dropdown Based on Selected Class
 // -------------------------------
 document.getElementById('classSelect').addEventListener('change', function() {
   const selected = this.value;
