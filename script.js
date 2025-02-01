@@ -330,7 +330,7 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('associationSelect').value = filterState.selectedAssociation;
         document.getElementById('classSelect').dispatchEvent(new Event('change'));
     }
-    applyFilters();
+    updateActiveFiltersDisplay();
 }
 
 // -------------------------------
