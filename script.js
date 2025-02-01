@@ -55,7 +55,7 @@ function renderSpells() {
         return acc;
     }, {});
 
-    // Render each level group
+    // Render each level group with spell cards
     container.innerHTML = Object.entries(spellsByLevel)
         .sort(([a], [b]) => Number(a) - Number(b))
         .map(([level, spells]) => `
@@ -71,14 +71,31 @@ function renderSpells() {
                 </div>
                 <div class="divide-y ${expandedLevel === level ? '' : 'hidden'}">
                     ${spells.map(spell => `
-                        <div class="p-4 hover:bg-gray-50 cursor-pointer" onclick='showSpellDetails(${JSON.stringify(spell).replace(/"/g, '&quot;')})'>
+                        <div class="spell-card p-4 hover:bg-gray-50 cursor-pointer" 
+                             data-spell='${encodeURIComponent(JSON.stringify(spell))}'>
                             <div class="font-medium">${spell.name}</div>
-                            <div class="text-sm text-gray-600 mt-1">${spell.traits?.join(', ') || ''}</div>
+                            <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
                         </div>
                     `).join('')}
                 </div>
             </div>
         `).join('');
+
+    // Attach click event listeners to each spell card
+    const spellCards = container.querySelectorAll('.spell-card');
+    spellCards.forEach(card => {
+        card.addEventListener('click', function () {
+            const spellData = this.getAttribute('data-spell');
+            if (spellData) {
+                try {
+                    const spell = JSON.parse(decodeURIComponent(spellData));
+                    showSpellDetails(spell);
+                } catch (err) {
+                    console.error('Error parsing spell data', err);
+                }
+            }
+        });
+    });
 }
 
 // Show spell details in a modal window (this functionality remains the same)
