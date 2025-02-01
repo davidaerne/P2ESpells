@@ -285,14 +285,13 @@ function updateActiveFiltersDisplay() {
   spellLevelTag.textContent = "Spell Level " + maxLevel;
   activeContainer.appendChild(spellLevelTag);
   
-  // Actions filter (removable and clickable for sorting)
+  // Actions filter (clickable for sorting)
   const actionsValue = document.getElementById('actionsSelect').value;
   if (actionsValue !== "All") {
     const actionsTag = document.createElement('span');
     actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    // Create two clickable elements: one for sorting, one for removal.
-    actionsTag.innerHTML = `<span data-filter="actions-sort" class="cursor-pointer underline">Actions: ${actionsValue}</span>
-                            <span class="ml-2 cursor-pointer" data-filter="actions-remove">×</span>`;
+    // Use a span with data-filter="actions-sort" for toggling sort order.
+    actionsTag.innerHTML = `<span data-filter="actions-sort" class="cursor-pointer underline">Actions: ${actionsValue}</span>`;
     activeContainer.appendChild(actionsTag);
   }
   
@@ -314,6 +313,7 @@ function updateActiveFiltersDisplay() {
     activeContainer.appendChild(searchTag);
   }
 }
+
 
 // -------------------------------
 // Local Storage for Filter Selections
