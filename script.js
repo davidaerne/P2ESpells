@@ -143,17 +143,19 @@ function showSpellDetails(spell) {
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
 
-  // If a nethysUrl is provided, make the title a link; otherwise, show plain text.
+  // If a nethysUrl is provided, make the title a clickable link with blue text and underline.
   if (spell.nethysUrl) {
-    title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="hover:underline">${spell.name}</a>`;
+    title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
   } else {
     title.textContent = spell.name;
   }
 
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
-  actionsElem.innerHTML = getActionBadgeHtml(spell, "text-sm");
 
-  // Process the description to convert markdown-style bold (**text**) to <strong>text</strong>
+  // Prefix the actions badge with "Action Cost: "
+  actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
+
+  // Process description to replace markdown bold (**text**) with <strong>text</strong>
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
@@ -194,6 +196,7 @@ function showSpellDetails(spell) {
 
   modal.classList.remove('hidden');
 }
+
 
 // -------------------------------
 // Active Filters Display
