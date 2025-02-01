@@ -16,19 +16,19 @@
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto px-4 py-8">
     <!-- Header -->
-    <header class="bg-white shadow-lg rounded-lg p-4 mb-6">
+    <header class="bg-white shadow-lg rounded-lg p-4 mb-4">
       <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold">Pathfinder 2E Spells</h1>
+        <h1 class="text-2xl font-bold">P2E Spells</h1>
         <div class="flex gap-2">
           <button id="filterBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Filter
           </button>
-          <button id="clearFilterBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-            Clear Filters
-          </button>
         </div>
       </div>
     </header>
+    
+    <!-- Active Filters Display -->
+    <div id="activeFilters" class="mb-4"></div>
 
     <!-- Filter Modal -->
     <div id="filterModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
@@ -39,11 +39,13 @@
         </div>
 
         <div class="space-y-4">
+          <!-- Search Filter -->
           <div>
             <label class="block mb-2 text-sm font-medium">Search</label>
             <input type="text" id="searchInput" class="w-full p-2 border rounded" placeholder="Search spells..." />
           </div>
 
+          <!-- Type Filter -->
           <div>
             <label class="block mb-2 text-sm font-medium">Type</label>
             <select id="typeSelect" class="w-full p-2 border rounded">
@@ -52,7 +54,25 @@
               <option value="Cantrip">Cantrips</option>
             </select>
           </div>
+          
+          <!-- Level Filter -->
+          <div>
+            <label class="block mb-2 text-sm font-medium">Level</label>
+            <select id="levelSelect" class="w-full p-2 border rounded">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
 
+          <!-- Sort Filter -->
           <div>
             <label class="block mb-2 text-sm font-medium">Sort By</label>
             <select id="sortSelect" class="w-full p-2 border rounded">
@@ -61,6 +81,7 @@
             </select>
           </div>
 
+          <!-- Traditions Filter -->
           <div>
             <label class="block mb-2 text-sm font-medium">Traditions</label>
             <select id="traditionsSelect" class="w-full p-2 border rounded" multiple size="4">
@@ -73,7 +94,7 @@
           </div>
         </div>
 
-        <div class="mt-6 flex justify-end gap-2">
+        <div class="mt-6 flex justify-end">
           <button id="applyFilterBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
             Apply
           </button>
@@ -90,7 +111,7 @@
               <h2 id="spellTitle" class="text-2xl font-semibold"></h2>
               <div id="spellLevel" class="text-gray-600"></div>
             </div>
-            <!-- Swapped the X with a Close button -->
+            <!-- Close Button Instead of "X" -->
             <button id="closeSpellBtn" class="text-gray-500 hover:text-gray-700 border border-gray-300 rounded px-3 py-1">
               Close
             </button>
