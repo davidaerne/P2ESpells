@@ -136,7 +136,6 @@ function renderSpells() {
   });
 }
 
-// Show spell details in a modal window
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
@@ -144,19 +143,24 @@ function showSpellDetails(spell) {
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
 
-  title.textContent = spell.name;
+  // If a nethysUrl is provided, make the title a link; otherwise, show plain text.
+  if (spell.nethysUrl) {
+    title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="hover:underline">${spell.name}</a>`;
+  } else {
+    title.textContent = spell.name;
+  }
+
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
-  // Update the actions text in the modal header (using a slightly larger size)
   actionsElem.innerHTML = getActionBadgeHtml(spell, "text-sm");
 
-  // Process description to replace **text** with <strong>text</strong>
+  // Process the description to convert markdown-style bold (**text**) to <strong>text</strong>
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   details.innerHTML = `
     <div>
       <div class="font-semibold">Traits</div>
-      <div>${spell.traits?.join(', ') || 'None'}</div>
+      <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
     </div>
     ${spell.cast ? `
       <div>
