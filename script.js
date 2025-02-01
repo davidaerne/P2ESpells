@@ -17,15 +17,13 @@ const classData = [
   {"class": "Wizard", "traits": ["arcane"], "traditions": ["arcane"]}
 ];
 
-// -------------------------------
 // Global Variables
-// -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-// Start with all groups collapsed.
-let expandedLevel = null;
-// Global sort state for actions (if needed later).
-let actionSortAsc = true;
+let expandedLevel = localStorage.getItem("expandedLevel") || null;
+let actionSortAsc = true; // true for ascending, false for descending.
+let sortActions = false;  // Indicates whether the user has clicked the "Actions" link.
+
 
 // -------------------------------
 // Helper Functions
@@ -140,11 +138,15 @@ function renderSpells() {
   sortedLevels.forEach(level => {
     const groupDiv = document.createElement('div');
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
+
+    // Accordion header with Unicode icons:
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
     headerDiv.innerHTML = `
       <div class="flex justify-between items-center">
-        <span>${level === '0' ? 'Cantrips' : `Level ${level}`} <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span></span>
+        <span>${level === '0' ? 'Cantrips' : `Level ${level}`} 
+          <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span>
+        </span>
         <span class="transition-colors duration-200">
           ${expandedLevel === level ? '&#9660;' : '&#9654;'}
         </span>
@@ -153,14 +155,40 @@ function renderSpells() {
     headerDiv.style.cursor = "pointer";
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
+
+    // Container for spells in this group:
     const spellsContainer = document.createElement('div');
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
+
+    // Title row with "Spell Name" and a clickable "Actions" link for sorting:
     if (expandedLevel === level) {
       const titleRow = document.createElement('div');
       titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
-      titleRow.innerHTML = `<div>Spell Name</div><div>Actions</div>`;
+      titleRow.innerHTML = `<div>Spell Name</div>
+                            <div>
+                              <a href="#" class="sort-actions-link underline">Actions</a>
+                            </div>`;
+      // Add an event listener to toggle sort order for actions.
+      titleRow.querySelector('.sort-actions-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        // Toggle the global sort-by-actions state.
+        sortActions = true;
+        actionSortAsc = !actionSortAsc;
+        renderSpells();
+      });
       spellsContainer.appendChild(titleRow);
     }
+
+    // For each spell, if sortActions is true then sort the spells in this group by their action cost.
+    if (sortActions) {
+      spellsByLevel[level].sort((a, b) => {
+        // Parse the action value (default to 0 if missing)
+        const aAction = parseInt(a.action, 10) || 0;
+        const bAction = parseInt(b.action, 10) || 0;
+        return actionSortAsc ? aAction - bAction : bAction - aAction;
+      });
+    }
+
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
@@ -180,20 +208,12 @@ function renderSpells() {
       });
       spellsContainer.appendChild(card);
     });
+
     groupDiv.appendChild(spellsContainer);
     container.appendChild(groupDiv);
   });
 }
 
-function toggleLevel(level) {
-  if (expandedLevel === level) {
-    expandedLevel = null;
-  } else {
-    expandedLevel = level;
-  }
-  localStorage.setItem("expandedLevel", expandedLevel || '');
-  renderSpells();
-}
 
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
