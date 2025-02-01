@@ -157,13 +157,47 @@ function showSpellDetails(spell) {
 }
 
 // -------------------------------
-// Active Filter Display
+// Active Filters Display
 // -------------------------------
 
-function updateActiveFilterDisplay() {
+function updateActiveFiltersDisplay() {
+  const activeContainer = document.getElementById('activeFilterDisplay');
+  activeContainer.innerHTML = ''; // clear previous tags
+
+  // Always show Spell Level filter (static tag)
   const maxLevel = document.getElementById('maxLevelSelect').value;
-  const activeDisplay = document.getElementById('activeFilterDisplay');
-  activeDisplay.innerHTML = `Showing spells up to Level ${maxLevel}`;
+  const spellLevelTag = document.createElement('span');
+  spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+  spellLevelTag.textContent = "Spell Level " + maxLevel;
+  activeContainer.appendChild(spellLevelTag);
+
+  // Show Search filter if active
+  const searchTerm = document.getElementById('searchInput').value.trim();
+  if (searchTerm !== '') {
+    const searchTag = document.createElement('span');
+    searchTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
+    activeContainer.appendChild(searchTag);
+  }
+
+  // Show Type filter if active (not "All")
+  const type = document.getElementById('typeSelect').value;
+  if (type !== 'All') {
+    const typeTag = document.createElement('span');
+    typeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    typeTag.innerHTML = `Type: ${type} <span class="ml-2 cursor-pointer" data-filter="type">×</span>`;
+    activeContainer.appendChild(typeTag);
+  }
+
+  // Show Traditions filter if any are selected
+  const traditionsSelect = document.getElementById('traditionsSelect');
+  const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
+  if (selectedTraditions.length > 0) {
+    const traditionsTag = document.createElement('span');
+    traditionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    traditionsTag.innerHTML = `Traditions: ${selectedTraditions.join(', ')} <span class="ml-2 cursor-pointer" data-filter="traditions">×</span>`;
+    activeContainer.appendChild(traditionsTag);
+  }
 }
 
 // -------------------------------
@@ -195,7 +229,7 @@ function loadFiltersFromLocalStorage() {
       option.selected = filterState.selectedTraditions && filterState.selectedTraditions.includes(option.value);
     }
   }
-  updateActiveFilterDisplay();
+  updateActiveFiltersDisplay();
 }
 
 // -------------------------------
@@ -231,7 +265,7 @@ function applyFilters() {
     }
 
     // New Level Filter:
-    // If the spell is not a cantrip and its level is greater than the selected maxLevel, exclude it.
+    // Always include cantrips; for spells, include only if spell level is less than or equal to maxLevel
     if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) {
       return false;
     }
@@ -247,7 +281,7 @@ function applyFilters() {
   }
 
   saveFiltersToLocalStorage();
-  updateActiveFilterDisplay();
+  updateActiveFiltersDisplay();
   renderSpells();
 }
 
@@ -277,6 +311,24 @@ function setupEventListeners() {
 
   document.getElementById('closeSpellBtn').addEventListener('click', () => {
     document.getElementById('spellModal').classList.add('hidden');
+  });
+
+  // Delegate click events on active filter tags (for clearing filters)
+  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
+    if (e.target && e.target.getAttribute('data-filter')) {
+      const filterType = e.target.getAttribute('data-filter');
+      if (filterType === 'search') {
+        document.getElementById('searchInput').value = '';
+      } else if (filterType === 'type') {
+        document.getElementById('typeSelect').value = 'All';
+      } else if (filterType === 'traditions') {
+        const traditionsSelect = document.getElementById('traditionsSelect');
+        for (const option of traditionsSelect.options) {
+          option.selected = false;
+        }
+      }
+      applyFilters();
+    }
   });
 }
 
