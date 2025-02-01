@@ -22,7 +22,7 @@ const classData = [
 // -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-// Force all groups to be collapsed initially.
+// Start with all groups collapsed.
 let expandedLevel = null;
 
 // -------------------------------
@@ -80,7 +80,6 @@ document.getElementById('classSelect').addEventListener('change', function() {
     const classObj = classData.find(item => item.class === selected);
     let associations = [];
     if (classObj) {
-      // Merge traits and traditions, ignoring "none"
       if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
         associations = associations.concat(classObj.traits);
       }
@@ -89,7 +88,12 @@ document.getElementById('classSelect').addEventListener('change', function() {
       }
       associations = [...new Set(associations)];
     }
-    if (associations.length > 0) {
+    // If only one association exists, auto-select it and hide the dropdown.
+    if (associations.length === 1) {
+      associationSelect.innerHTML = `<option value="All">All</option><option value="${associations[0]}">${associations[0]}</option>`;
+      associationSelect.value = associations[0];
+      associationContainer.style.display = "none";
+    } else if (associations.length > 1) {
       associationContainer.style.display = "block";
       associationSelect.innerHTML = `<option value="All">All</option>`;
       associations.forEach(a => {
@@ -106,7 +110,7 @@ document.getElementById('classSelect').addEventListener('change', function() {
 });
 
 // -------------------------------
-// Rendering Functions
+// Rendering Functions (Spell List / Accordion)
 // -------------------------------
 function renderSpells() {
   const container = document.getElementById('spellContainer');
@@ -127,7 +131,6 @@ function renderSpells() {
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
-    // Use the requested Unicode icons:
     headerDiv.innerHTML = `
       <div class="flex justify-between items-center">
         <span>${level === '0' ? 'Cantrips' : `Level ${level}`} <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span></span>
@@ -256,13 +259,7 @@ function updateActiveFiltersDisplay() {
     searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
     activeContainer.appendChild(searchTag);
   }
-  const traditionsValue = document.getElementById('traditionsSelect').value;
-  if (traditionsValue !== "All") {
-    const traditionsTag = document.createElement('span');
-    traditionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    traditionsTag.innerHTML = `Traditions: ${traditionsValue} <span class="ml-2 cursor-pointer" data-filter="traditions">×</span>`;
-    activeContainer.appendChild(traditionsTag);
-  }
+  // Class & Association filter
   const selectedClass = document.getElementById('classSelect').value;
   if (selectedClass !== "All") {
     let classText = `Class: ${selectedClass}`;
@@ -282,13 +279,12 @@ function updateActiveFiltersDisplay() {
 // -------------------------------
 function saveFiltersToLocalStorage() {
   const searchTerm = document.getElementById('searchInput').value;
-  const traditionsValue = document.getElementById('traditionsSelect').value;
   const maxLevel = document.getElementById('maxLevelSelect').value;
   const actionsValue = document.getElementById('actionsSelect').value;
   const rangeValue = document.getElementById('rangeSelect').value;
   const selectedClass = document.getElementById('classSelect').value;
   const selectedAssociation = document.getElementById('associationSelect').value;
-  const filterState = { searchTerm, traditionsValue, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
+  const filterState = { searchTerm, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
@@ -297,7 +293,6 @@ function loadFiltersFromLocalStorage() {
   if (stored) {
     const filterState = JSON.parse(stored);
     document.getElementById('searchInput').value = filterState.searchTerm || '';
-    document.getElementById('traditionsSelect').value = filterState.traditionsValue || 'All';
     document.getElementById('maxLevelSelect').value = filterState.maxLevel || '1';
     document.getElementById('actionsSelect').value = filterState.actionsValue || 'All';
     document.getElementById('rangeSelect').value = filterState.rangeValue || 'All';
@@ -312,7 +307,6 @@ function loadFiltersFromLocalStorage() {
 // -------------------------------
 function applyFilters() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-  const traditionsValue = document.getElementById('traditionsSelect').value.toLowerCase();
   const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
   const actionsSelectValue = document.getElementById('actionsSelect').value;
   const rangeValue = document.getElementById('rangeSelect').value.toLowerCase().trim();
@@ -320,7 +314,7 @@ function applyFilters() {
   const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
   
   filteredSpells = allSpells.filter(spell => {
-    // Search Filter: check name and traits
+    // Search Filter (name and traits)
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
       const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
@@ -349,13 +343,7 @@ function applyFilters() {
     if (rangeValue !== "all") {
       if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue) return false;
     }
-    // Traditions Filter (if selected in modal)
-    if (traditionsValue !== "all") {
-      const inTraditions = (spell.traditions || []).some(t => t.toLowerCase() === traditionsValue);
-      const inTraits = (spell.traits || []).some(t => t.toLowerCase() === traditionsValue);
-      if (!inTraditions && !inTraits) return false;
-    }
-    // Class & Association Filter:
+    // Class & Association Filter
     if (selectedClass !== "All") {
       const classObj = classData.find(item => item.class === selectedClass);
       let classAssociations = [];
@@ -368,13 +356,10 @@ function applyFilters() {
         }
       }
       if (selectedAssociation !== "all") {
-        // Spell must include the selected association in either traits or traditions.
         const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
                            (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
         if (!assocMatch) return false;
       } else {
-        // If no specific association is chosen, then if classAssociations exist,
-        // require that the spell has at least one association from that list.
         if (classAssociations.length > 0) {
           const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
                                  (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
@@ -385,7 +370,7 @@ function applyFilters() {
     return true;
   });
   
-  // Sort by level (ascending)
+  // Sort filtered spells by level (ascending)
   filteredSpells.sort((a, b) => getSpellLevel(a) - getSpellLevel(b));
   
   saveFiltersToLocalStorage();
@@ -420,13 +405,14 @@ function setupEventListeners() {
     document.getElementById('spellModal').classList.add('hidden');
   });
   
+  // Active filter tags (clear individual filters)
   document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
     if (e.target && e.target.getAttribute('data-filter')) {
       const filterType = e.target.getAttribute('data-filter');
       if (filterType === 'search') {
         document.getElementById('searchInput').value = '';
       } else if (filterType === 'traditions') {
-        document.getElementById('traditionsSelect').value = 'All';
+        // No traditions dropdown now.
       } else if (filterType === 'actions') {
         document.getElementById('actionsSelect').value = 'All';
       } else if (filterType === 'range') {
@@ -440,6 +426,11 @@ function setupEventListeners() {
       }
       applyFilters();
     }
+  });
+  
+  // Dynamic search: as you type in the search input, apply filters.
+  document.getElementById('searchInput').addEventListener('input', () => {
+    applyFilters();
   });
 }
 
