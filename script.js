@@ -470,14 +470,20 @@ function showSpellDetails(spell) {
     const levelElem = document.getElementById('spellLevel');
     const details = document.getElementById('spellDetails');
     const actionsElem = document.getElementById('spellActions');
-    
-    title.textContent = spell.name;
+
+    // ✅ Make the title a clickable link if the spell has a Nethys URL
+    if (spell.nethysUrl) {
+        title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline font-bold">${spell.name}</a>`;
+    } else {
+        title.textContent = spell.name;
+    }
+
     levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
     actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
-    
+
     let detailsHtml = '';
     detailsHtml += `<div class="mb-4"><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
-    
+
     // Additional spell details
     if (spell.cast && spell.cast.trim().toLowerCase() !== "to") {
         detailsHtml += `<div class="mb-4"><div class="font-semibold">Cast</div><div>${spell.cast}</div></div>`;
@@ -494,7 +500,7 @@ function showSpellDetails(spell) {
     if (spell.description) {
         detailsHtml += `<div><div class="font-semibold">Description</div><div class="whitespace-pre-wrap">${formatActionDetails(spell.description)}</div></div>`;
     }
-    
+
     details.innerHTML = detailsHtml;
     modal.classList.remove('hidden');
 }
