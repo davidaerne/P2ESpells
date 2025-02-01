@@ -436,27 +436,24 @@ function applyFilters() {
 // Event Listeners Setup
 // -------------------------------
 function setupEventListeners() {
+  // Add click handler for Actions label
+  const actionsLabel = document.querySelector('label[for="actionsSelect"]');
+  if (actionsLabel) {
+    actionsLabel.style.cursor = 'pointer';
+    actionsLabel.addEventListener('click', function(e) {
+      actionSortAsc = !actionSortAsc;
+      // Sort filteredSpells by numeric action value
+      filteredSpells.sort((a, b) => {
+        const aVal = parseInt(a.action, 10) || 0;
+        const bVal = parseInt(b.action, 10) || 0;
+        return actionSortAsc ? aVal - bVal : bVal - aVal;
+      });
+      renderSpells();
+    });
+  }
+
   document.getElementById('filterBtn').addEventListener('click', () => {
     document.getElementById('filterModal').classList.remove('hidden');
-  });
-  
-  document.getElementById('closeFilterBtn').addEventListener('click', () => {
-    document.getElementById('filterModal').classList.add('hidden');
-  });
-  
-  document.getElementById('applyFilterBtn').addEventListener('click', () => {
-    applyFilters();
-    document.getElementById('filterModal').classList.add('hidden');
-  });
-  
-  document.getElementById('spellModal').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('spellModal')) {
-      document.getElementById('spellModal').classList.add('hidden');
-    }
-  });
-  
-  document.getElementById('closeSpellBtn').addEventListener('click', () => {
-    document.getElementById('spellModal').classList.add('hidden');
   });
   
   // Active Filter tags: removal for search, range, and association.
