@@ -459,28 +459,25 @@ function setupEventListeners() {
   });
   
   // Active Filter tags: removal for search, range, and association.
-  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
-    if (e.target && e.target.getAttribute('data-filter')) {
-      const filterType = e.target.getAttribute('data-filter');
-      if (filterType === 'search') {
-        document.getElementById('searchInput').value = '';
-      } else if (filterType === 'range') {
-        document.getElementById('rangeSelect').value = 'All';
-      } else if (filterType === 'association') {
-        document.getElementById('associationSelect').value = 'All';
-      } else if (filterType === 'actions-remove') {
-        document.getElementById('actionsSelect').value = 'All';
-      }
-      applyFilters();
-    }
-  });
-  
-  // Active Filter: Actions sorting toggle.
 document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
-    if (e.target && e.target.getAttribute('data-filter') === "actions-sort") {
-        e.preventDefault(); // Prevent any navigation behavior
+    if (!e.target || !e.target.getAttribute('data-filter')) return;
+    
+    const filterType = e.target.getAttribute('data-filter');
+
+    if (filterType === 'search') {
+        document.getElementById('searchInput').value = '';
+    } else if (filterType === 'range') {
+        document.getElementById('rangeSelect').value = 'All';
+    } else if (filterType === 'association') {
+        document.getElementById('associationSelect').value = 'All';
+    } else if (filterType === 'actions-remove') {
+        document.getElementById('actionsSelect').value = 'All';
+    } else if (filterType === "actions-sort") {
+        e.preventDefault(); // Prevent any default behavior if it's a link
+
+        // Toggle action sort order
         actionSortAsc = !actionSortAsc;
-        
+
         // Sort filteredSpells by numeric action value
         filteredSpells.sort((a, b) => {
             const aVal = parseInt(a.action, 10) || 0;
@@ -489,8 +486,12 @@ document.getElementById('activeFilterDisplay').addEventListener('click', functio
         });
 
         renderSpells();
+        return; // Stop further execution for sorting
     }
+
+    applyFilters();
 });
+
 
   
   // Dynamic search: as the user types, apply filters.
