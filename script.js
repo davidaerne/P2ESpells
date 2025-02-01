@@ -1,50 +1,170 @@
 // -------------------------------
-// Show Spell Details in Modal
+// Global Variables
 // -------------------------------
-function showSpellDetails(spell) {
-    console.log("✅ Showing spell details:", spell);
+let allSpells = [];
+let filteredSpells = [];
+let expandedLevel = null; // Default: No group expanded
+let actionSortAsc = true; // Default sorting order
 
-    const modal = document.getElementById('spellModal');
-    const title = document.getElementById('spellTitle');
-    const level = document.getElementById('spellLevel');
-    const details = document.getElementById('spellDetails');
+// -------------------------------
+// Helper Functions
+// -------------------------------
+function isCantrip(spell) {
+    return (spell.traits || []).map(t => t.toLowerCase()).includes('cantrip');
+}
 
-    // Set spell title as a clickable link
-    if (spell.nethysUrl) {
-        title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
-    } else {
-        title.textContent = spell.name;
-    }
+function getSpellLevel(spell) {
+    if (isCantrip(spell)) return 0;
+    const num = parseInt(spell.level, 10);
+    return isNaN(num) ? -1 : num;
+}
 
-    level.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
-
-    // Generate spell details dynamically
-    details.innerHTML = `
-        ${spell.traits ? `<div><strong>Traits:</strong> ${spell.traits.join(', ')}</div>` : ''}
-        ${spell.range && spell.range !== "to" ? `<div><strong>Range:</strong> ${spell.range}</div>` : ''}
-        ${spell.area ? `<div><strong>Area:</strong> ${spell.area}</div>` : ''}
-        ${spell.duration ? `<div><strong>Duration:</strong> ${spell.duration}</div>` : ''}
-        ${spell.defense ? `<div><strong>Defense:</strong> ${spell.defense}</div>` : ''}
-        ${spell.targets ? `<div><strong>Targets:</strong> ${spell.targets}</div>` : ''}
-        ${spell.trigger ? `<div><strong>Trigger:</strong> ${spell.trigger}</div>` : ''}
-        ${spell.cast && spell.cast !== "to" ? `<div><strong>Cast:</strong> ${spell.cast}</div>` : ''}
-        ${spell.action ? `<div><strong>Action Cost:</strong> ${spell.action}</div>` : ''}
-        ${spell.description ? `<div class="whitespace-pre-wrap">${formatActionDetails(spell.description)}</div>` : 'No description available.'}
-    `;
-
-    modal.classList.remove('hidden');
+// Format action details with blue circle numbers
+function formatActionDetails(text) {
+    return text.replace(/\|(\d+)\|/g, (match, number) => 
+        `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`
+    );
 }
 
 // -------------------------------
-// Close Modal Event Listener
+// Rendering Functions (Spell List)
 // -------------------------------
-document.getElementById('closeSpellBtn').addEventListener('click', () => {
-    document.getElementById('spellModal').classList.add('hidden');
-});
+function renderSpells() {
+    console.log("Rendering spells...");
+    const container = document.getElementById('spellContainer');
+    container.innerHTML = '';
 
-// Close modal when clicking outside
-document.getElementById('spellModal').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('spellModal')) {
-        document.getElementById('spellModal').classList.add('hidden');
+    if (filteredSpells.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-gray-600">No spells found matching your criteria</div>`;
+        return;
     }
+
+    // Group spells by level
+    const spellsByLevel = filteredSpells.reduce((acc, spell) => {
+        const level = getSpellLevel(spell);
+        if (!acc[level]) acc[level] = [];
+        acc[level].push(spell);
+        return acc;
+    }, {});
+
+    // Sort levels in ascending order
+    Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b)).forEach(level => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = "bg-white rounded-lg shadow mb-4";
+
+        // Accordion Header (Spell Level)
+        const headerDiv = document.createElement('div');
+        headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
+        headerDiv.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span>${level === '0' ? 'Cantrips' : `Level ${level}`} 
+                    <span class="text-gray-500 text-sm">(${spellsByLevel[level].length} spells)</span>
+                </span>
+                <span>${expandedLevel === level ? '&#9660;' : '&#9654;'}</span>
+            </div>
+        `;
+        headerDiv.addEventListener('click', () => toggleLevel(level));
+        groupDiv.appendChild(headerDiv);
+
+        // Spell List Container
+        const spellsContainer = document.createElement('div');
+        spellsContainer.className = `divide-y ${expandedLevel === level ? '' : 'hidden'}`;
+
+        // Title Row (Includes "Actions" sorting)
+        if (expandedLevel === level) {
+            const titleRow = document.createElement('div');
+            titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
+            titleRow.innerHTML = `
+                <div>Spell Name</div>
+                <div>
+                    <span class="sort-actions-link underline cursor-pointer" data-filter="actions-sort">Actions</span>
+                </div>
+            `;
+            spellsContainer.appendChild(titleRow);
+        }
+
+        // Spell Cards
+        spellsByLevel[level].forEach(spell => {
+            const card = document.createElement('div');
+            card.className = "p-4 hover:bg-gray-50 cursor-pointer";
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="font-medium">${spell.name}</div>
+                        <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
+                    </div>
+                    <span>${spell.action ? spell.action : ''}</span>
+                </div>
+            `;
+            card.addEventListener('click', () => showSpellDetails(spell));
+            spellsContainer.appendChild(card);
+        });
+
+        groupDiv.appendChild(spellsContainer);
+        container.appendChild(groupDiv);
+    });
+
+    attachSortingEvent(); // Ensure sorting event is attached
+}
+
+// -------------------------------
+// Attach Sorting Event (Actions)
+// -------------------------------
+function attachSortingEvent() {
+    setTimeout(() => {
+        const sortLink = document.querySelector('[data-filter="actions-sort"]');
+        if (sortLink) {
+            console.log("✅ Attaching click event to Actions sorting.");
+            sortLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                console.log("✅ Sorting actions fired!");
+                actionSortAsc = !actionSortAsc;
+
+                filteredSpells.sort((a, b) => {
+                    const aVal = parseInt(a.action, 10) || 0;
+                    const bVal = parseInt(b.action, 10) || 0;
+                    return actionSortAsc ? aVal - bVal : bVal - aVal;
+                });
+
+                console.log("Sort Order:", actionSortAsc ? "Ascending" : "Descending");
+                renderSpells();
+            });
+        } else {
+            console.error("❌ Sorting event not attached: 'Actions' link not found!");
+        }
+    }, 500);
+}
+
+// -------------------------------
+// Toggle Level Expansion
+// -------------------------------
+function toggleLevel(level) {
+    expandedLevel = (expandedLevel === level) ? null : level;
+    renderSpells();
+}
+
+// -------------------------------
+// Fetch Spells Data
+// -------------------------------
+async function fetchSpells() {
+    console.log('Fetching spells...');
+    try {
+        const response = await fetch('https://raw.githubusercontent.com/davidaerne/OracleSpells/76953dbcbc7738dbfc8352de3165b315a63312ea/spells.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        allSpells = await response.json();
+        filteredSpells = allSpells;
+        renderSpells();
+    } catch (err) {
+        console.error('Fetch Error:', err);
+        document.getElementById('spellContainer').innerHTML = `<div class="text-red-600">Error loading spells: ${err.message}</div>`;
+    }
+}
+
+// -------------------------------
+// Initialize Script
+// -------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+    fetchSpells();
 });
