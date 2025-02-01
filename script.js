@@ -62,7 +62,7 @@ function getActionBadgeHtml(spell, sizeClass) {
 }
 
 // -------------------------------
-// Populate Class Dropdown
+// Populate Class Dropdown (for modal filter)
 // -------------------------------
 function populateClassSelect() {
   const classSelect = document.getElementById('classSelect');
@@ -214,6 +214,9 @@ function showSpellDetails(spell) {
   modal.classList.remove('hidden');
 }
 
+// -------------------------------
+// Active Filters Display
+// -------------------------------
 function updateActiveFiltersDisplay() {
   const activeContainer = document.getElementById('activeFilterDisplay');
   activeContainer.innerHTML = '';
@@ -243,49 +246,39 @@ function updateActiveFiltersDisplay() {
     searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
     activeContainer.appendChild(searchTag);
   }
-  const type = document.getElementById('typeSelect').value;
-  if (type !== 'All') {
-    const typeTag = document.createElement('span');
-    typeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    typeTag.innerHTML = `Type: ${type} <span class="ml-2 cursor-pointer" data-filter="type">×</span>`;
-    activeContainer.appendChild(typeTag);
-  }
-  const traditionsSelect = document.getElementById('traditionsSelect');
-  const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
-  if (selectedTraditions.length > 0) {
+  // Traditions (from modal dropdown)
+  const traditionsValue = document.getElementById('traditionsSelect').value;
+  if (traditionsValue !== "All") {
     const traditionsTag = document.createElement('span');
     traditionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    traditionsTag.innerHTML = `Traditions: ${selectedTraditions.join(', ')} <span class="ml-2 cursor-pointer" data-filter="traditions">×</span>`;
+    traditionsTag.innerHTML = `Traditions: ${traditionsValue} <span class="ml-2 cursor-pointer" data-filter="traditions">×</span>`;
     activeContainer.appendChild(traditionsTag);
   }
+  // Class filter
   const selectedClass = document.getElementById('classSelect').value;
   if (selectedClass !== "All") {
+    let classText = `Class: ${selectedClass}`;
+    // If an association is selected, append it in parentheses.
+    const selectedAssociation = document.getElementById('associationSelect').value;
+    if (selectedAssociation !== "All") {
+      classText += ` (${selectedAssociation})`;
+    }
     const classTag = document.createElement('span');
     classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    classTag.innerHTML = `Class: ${selectedClass} <span class="ml-2 cursor-pointer" data-filter="class">×</span>`;
+    classTag.innerHTML = `${classText} <span class="ml-2 cursor-pointer" data-filter="class">×</span>`;
     activeContainer.appendChild(classTag);
-  }
-  const selectedAssociation = document.getElementById('associationSelect').value;
-  if (selectedAssociation !== "All") {
-    const associationTag = document.createElement('span');
-    associationTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    associationTag.innerHTML = `Association: ${selectedAssociation} <span class="ml-2 cursor-pointer" data-filter="association">×</span>`;
-    activeContainer.appendChild(associationTag);
   }
 }
 
 function saveFiltersToLocalStorage() {
   const searchTerm = document.getElementById('searchInput').value;
-  const type = document.getElementById('typeSelect').value;
-  const sortBy = document.getElementById('sortSelect').value;
-  const traditionsSelect = document.getElementById('traditionsSelect');
-  const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
+  const traditionsValue = document.getElementById('traditionsSelect').value;
   const maxLevel = document.getElementById('maxLevelSelect').value;
   const actionsValue = document.getElementById('actionsSelect').value;
   const rangeValue = document.getElementById('rangeSelect').value;
   const selectedClass = document.getElementById('classSelect').value;
   const selectedAssociation = document.getElementById('associationSelect').value;
-  const filterState = { searchTerm, type, sortBy, selectedTraditions, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
+  const filterState = { searchTerm, traditionsValue, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
@@ -294,49 +287,38 @@ function loadFiltersFromLocalStorage() {
   if (stored) {
     const filterState = JSON.parse(stored);
     document.getElementById('searchInput').value = filterState.searchTerm || '';
-    document.getElementById('typeSelect').value = filterState.type || 'All';
-    document.getElementById('sortSelect').value = filterState.sortBy || 'Level';
+    document.getElementById('traditionsSelect').value = filterState.traditionsValue || 'All';
     document.getElementById('maxLevelSelect').value = filterState.maxLevel || '1';
     document.getElementById('actionsSelect').value = filterState.actionsValue || 'All';
     document.getElementById('rangeSelect').value = filterState.rangeValue || 'All';
     document.getElementById('classSelect').value = filterState.selectedClass || 'All';
     document.getElementById('associationSelect').value = filterState.selectedAssociation || 'All';
-    const traditionsSelect = document.getElementById('traditionsSelect');
-    for (const option of traditionsSelect.options) {
-      option.selected = filterState.selectedTraditions && filterState.selectedTraditions.includes(option.value);
-    }
   }
   updateActiveFiltersDisplay();
 }
 
+// -------------------------------
+// Filtering Functions
+// -------------------------------
 function applyFilters() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-  const type = document.getElementById('typeSelect').value;
-  const sortBy = document.getElementById('sortSelect').value;
-  const traditionsSelect = document.getElementById('traditionsSelect');
-  const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
+  const traditionsValue = document.getElementById('traditionsSelect').value.toLowerCase();
   const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
   const actionsSelectValue = document.getElementById('actionsSelect').value;
-  const rangeValue = document.getElementById('rangeSelect').value;
-  const selectedAssociation = document.getElementById('associationSelect').value;
+  const rangeValue = document.getElementById('rangeSelect').value.toLowerCase().trim();
+  const selectedClass = document.getElementById('classSelect').value;
+  const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
   
   filteredSpells = allSpells.filter(spell => {
-    const traditions = (spell.traditions || []).map(t => t.toLowerCase());
-    const traits = (spell.traits || []).map(t => t.toLowerCase());
-    const combined = [...traditions, ...traits];
-    if (selectedTraditions.length > 0 && !selectedTraditions.some(t => combined.includes(t.toLowerCase()))) {
-      return false;
-    }
-    if (type === 'Cantrip' && !isCantrip(spell)) return false;
-    if (type === 'Spell' && isCantrip(spell)) return false;
+    // Filter by search term in spell name or traits
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
-      const inTraits = traits.some(t => t.includes(searchTerm));
+      const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
       if (!inName && !inTraits) return false;
     }
-    if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) {
-      return false;
-    }
+    // Level Filter: (always include cantrips)
+    if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) return false;
+    // Actions Filter:
     if (actionsSelectValue !== "All") {
       const selectedAction = parseInt(actionsSelectValue, 10);
       if (!spell.action) return false;
@@ -353,31 +335,58 @@ function applyFilters() {
         if (spellAction !== selectedAction) return false;
       }
     }
-    if (rangeValue !== "All") {
-      if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue.toLowerCase().trim()) {
-        return false;
-      }
+    // Range Filter:
+    if (rangeValue !== "all") {
+      if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue) return false;
     }
-    if (selectedAssociation !== "All") {
-      const assoc = selectedAssociation.toLowerCase();
-      const inTraits = (spell.traits || []).some(t => t.toLowerCase() === assoc);
-      const inTraditions = (spell.traditions || []).some(t => t.toLowerCase() === assoc);
-      if (!inTraits && !inTraditions) return false;
+    // Traditions Filter (from modal dropdown):
+    if (traditionsValue !== "all") {
+      const inTraditions = (spell.traditions || []).some(t => t.toLowerCase() === traditionsValue);
+      const inTraits = (spell.traits || []).some(t => t.toLowerCase() === traditionsValue);
+      if (!inTraditions && !inTraits) return false;
+    }
+    // Class & Association Filter:
+    if (selectedClass !== "All") {
+      // Look up the associations for this class
+      const classObj = classData.find(item => item.class === selectedClass);
+      let classAssociations = [];
+      if (classObj) {
+        if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
+          classAssociations = classAssociations.concat(classObj.traits.map(t => t.toLowerCase()));
+        }
+        if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
+          classAssociations = classAssociations.concat(classObj.traditions.map(t => t.toLowerCase()));
+        }
+      }
+      // If an association is specifically chosen, use it
+      if (selectedAssociation !== "all") {
+        if (!((spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
+              (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation))) {
+          return false;
+        }
+      } else {
+        // If no specific association is chosen, require that the spell has at least one association from classAssociations.
+        if (classAssociations.length > 0) {
+          const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
+                                 (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
+          if (!hasAssociation) return false;
+        }
+      }
     }
     return true;
   });
   
-  if (sortBy === 'Level') {
-    filteredSpells.sort((a, b) => getSpellLevel(a) - getSpellLevel(b));
-  } else {
-    filteredSpells.sort((a, b) => a.name.localeCompare(b.name));
-  }
+  // Sort by level (ascending)
+  filteredSpells.sort((a, b) => getSpellLevel(a) - getSpellLevel(b));
   
   saveFiltersToLocalStorage();
   updateActiveFiltersDisplay();
   renderSpells();
 }
 
+// -------------------------------
+// Event Listeners Setup
+// -------------------------------
 function setupEventListeners() {
   document.getElementById('filterBtn').addEventListener('click', () => {
     document.getElementById('filterModal').classList.remove('hidden');
@@ -407,13 +416,8 @@ function setupEventListeners() {
       const filterType = e.target.getAttribute('data-filter');
       if (filterType === 'search') {
         document.getElementById('searchInput').value = '';
-      } else if (filterType === 'type') {
-        document.getElementById('typeSelect').value = 'All';
       } else if (filterType === 'traditions') {
-        const traditionsSelect = document.getElementById('traditionsSelect');
-        for (const option of traditionsSelect.options) {
-          option.selected = false;
-        }
+        document.getElementById('traditionsSelect').value = 'All';
       } else if (filterType === 'actions') {
         document.getElementById('actionsSelect').value = 'All';
       } else if (filterType === 'range') {
@@ -430,6 +434,9 @@ function setupEventListeners() {
   });
 }
 
+// -------------------------------
+// Fetch Spells Data
+// -------------------------------
 async function fetchSpells() {
   const container = document.getElementById('spellContainer');
   console.log('Fetching spells...');
