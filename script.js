@@ -22,8 +22,10 @@ const classData = [
 // -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-// Start with all groups collapsed.
+// Start with no group expanded.
 let expandedLevel = null;
+// Global sort state for actions.
+let actionSortAsc = true;
 
 // -------------------------------
 // Helper Functions
@@ -88,7 +90,6 @@ document.getElementById('classSelect').addEventListener('change', function() {
       }
       associations = [...new Set(associations)];
     }
-    // If only one association exists, auto-select it and hide the dropdown.
     if (associations.length === 1) {
       associationSelect.innerHTML = `<option value="All">All</option><option value="${associations[0]}">${associations[0]}</option>`;
       associationSelect.value = associations[0];
@@ -184,138 +185,57 @@ function toggleLevel(level) {
   renderSpells();
 }
 
-/**
- * Scans the provided text for any occurrences of numbers wrapped in vertical bars (e.g. |1|)
- * and replaces each with an HTML <span> styled as a blue circle.
- */
-function formatActionDetails(text) {
-  return text.replace(/\|(\d+)\|/g, function(match, number) {
-    return `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`;
-  });
-}
-
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
   const levelElem = document.getElementById('spellLevel');
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
-
-  // If a nethysUrl is provided, display the title as a clickable link
   if (spell.nethysUrl) {
     title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
   } else {
     title.textContent = spell.name;
   }
-
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
-
-  // Process the description:
-  // 1. Replace markdown-style bold (**text**) with <strong>text</strong>
-  // 2. Wrap any |X| patterns in blue circles.
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  description = formatActionDetails(description);
-
-  // Build the details HTML.
   let detailsHtml = '';
-
-  // Always show Traits
-  detailsHtml += `<div>
-                    <div class="font-semibold">Traits</div>
-                    <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
-                  </div>`;
-  
-  // Only include the Cast field if its value is not exactly "to" (case-insensitive)
+  detailsHtml += `<div><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
   if (spell.cast && spell.cast.trim().toLowerCase() !== "to") {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Cast</div>
-                      <div>${spell.cast}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Cast</div><div>${spell.cast}</div></div>`;
   }
-  
   if (spell.area) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Area</div>
-                      <div>${spell.area}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Area</div><div>${spell.area}</div></div>`;
   }
   if (spell.range) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Range</div>
-                      <div>${spell.range}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Range</div><div>${spell.range}</div></div>`;
   }
   if (spell.duration) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Duration</div>
-                      <div>${spell.duration}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Duration</div><div>${spell.duration}</div></div>`;
   }
   if (spell.defense) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Defense</div>
-                      <div>${spell.defense}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Defense</div><div>${spell.defense}</div></div>`;
   }
   if (spell.targets) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Targets</div>
-                      <div>${spell.targets}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Targets</div><div>${spell.targets}</div></div>`;
   }
   if (spell.trigger) {
-    detailsHtml += `<div>
-                      <div class="font-semibold">Trigger</div>
-                      <div>${spell.trigger}</div>
-                    </div>`;
+    detailsHtml += `<div><div class="font-semibold">Trigger</div><div>${spell.trigger}</div></div>`;
   }
-  
-  // Always show the Description last.
-  detailsHtml += `<div>
-                    <div class="font-semibold">Description</div>
-                    <div class="whitespace-pre-wrap">${description}</div>
-                  </div>`;
-  
+  detailsHtml += `<div><div class="font-semibold">Description</div><div class="whitespace-pre-wrap">${description}</div></div>`;
   details.innerHTML = detailsHtml;
   modal.classList.remove('hidden');
 }
-
 
 // -------------------------------
 // Active Filters Display
 // -------------------------------
 function updateActiveFiltersDisplay() {
   const activeContainer = document.getElementById('activeFilterDisplay');
-  activeContainer.innerHTML = '';
-  const maxLevel = document.getElementById('maxLevelSelect').value;
-  const spellLevelTag = document.createElement('span');
-  spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-  spellLevelTag.textContent = "Spell Level " + maxLevel;
-  activeContainer.appendChild(spellLevelTag);
-  const actionsValue = document.getElementById('actionsSelect').value;
-  if (actionsValue !== "All") {
-    const actionsTag = document.createElement('span');
-    actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    actionsTag.innerHTML = `Actions: ${actionsValue} <span class="ml-2 cursor-pointer" data-filter="actions">×</span>`;
-    activeContainer.appendChild(actionsTag);
-  }
-  const rangeValue = document.getElementById('rangeSelect').value;
-  if (rangeValue !== "All") {
-    const rangeTag = document.createElement('span');
-    rangeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    rangeTag.innerHTML = `Range: ${rangeValue} <span class="ml-2 cursor-pointer" data-filter="range">×</span>`;
-    activeContainer.appendChild(rangeTag);
-  }
-  const searchTerm = document.getElementById('searchInput').value.trim();
-  if (searchTerm !== '') {
-    const searchTag = document.createElement('span');
-    searchTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
-    activeContainer.appendChild(searchTag);
-  }
-  // Class & Association filter
+  activeContainer.innerHTML = "";
+  
+  // First: Class (non-removable)
   const selectedClass = document.getElementById('classSelect').value;
   if (selectedClass !== "All") {
     let classText = `Class: ${selectedClass}`;
@@ -325,8 +245,45 @@ function updateActiveFiltersDisplay() {
     }
     const classTag = document.createElement('span');
     classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    classTag.innerHTML = `${classText} <span class="ml-2 cursor-pointer" data-filter="class">×</span>`;
+    // Do not include a removal "×" for Class filter.
+    classTag.textContent = classText;
     activeContainer.appendChild(classTag);
+  }
+  
+  // Next: Spell Level (non-removable)
+  const maxLevel = document.getElementById('maxLevelSelect').value;
+  const spellLevelTag = document.createElement('span');
+  spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+  spellLevelTag.textContent = "Spell Level " + maxLevel;
+  activeContainer.appendChild(spellLevelTag);
+  
+  // Next: Actions (clickable for sorting)
+  const actionsValue = document.getElementById('actionsSelect').value;
+  if (actionsValue !== "All") {
+    const actionsTag = document.createElement('span');
+    actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    // Remove the removal icon and set a custom data attribute for sorting.
+    actionsTag.innerHTML = `Actions: ${actionsValue}`;
+    actionsTag.setAttribute("data-filter", "actions-sort");
+    activeContainer.appendChild(actionsTag);
+  }
+  
+  // Then: Range filter (removable)
+  const rangeValue = document.getElementById('rangeSelect').value;
+  if (rangeValue !== "All") {
+    const rangeTag = document.createElement('span');
+    rangeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    rangeTag.innerHTML = `Range: ${rangeValue} <span class="ml-2 cursor-pointer" data-filter="range">×</span>`;
+    activeContainer.appendChild(rangeTag);
+  }
+  
+  // Then: Search filter (removable)
+  const searchTerm = document.getElementById('searchInput').value.trim();
+  if (searchTerm !== "") {
+    const searchTag = document.createElement('span');
+    searchTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
+    activeContainer.appendChild(searchTag);
   }
 }
 
@@ -348,12 +305,12 @@ function loadFiltersFromLocalStorage() {
   const stored = localStorage.getItem("spellFilterState");
   if (stored) {
     const filterState = JSON.parse(stored);
-    document.getElementById('searchInput').value = filterState.searchTerm || '';
-    document.getElementById('maxLevelSelect').value = filterState.maxLevel || '1';
-    document.getElementById('actionsSelect').value = filterState.actionsValue || 'All';
-    document.getElementById('rangeSelect').value = filterState.rangeValue || 'All';
-    document.getElementById('classSelect').value = filterState.selectedClass || 'All';
-    document.getElementById('associationSelect').value = filterState.selectedAssociation || 'All';
+    document.getElementById('searchInput').value = filterState.searchTerm || "";
+    document.getElementById('maxLevelSelect').value = filterState.maxLevel || "1";
+    document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
+    document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
+    document.getElementById('classSelect').value = filterState.selectedClass || "All";
+    document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
   }
   updateActiveFiltersDisplay();
 }
@@ -370,7 +327,7 @@ function applyFilters() {
   const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
   
   filteredSpells = allSpells.filter(spell => {
-    // Search Filter (name and traits)
+    // Search Filter: check name and traits
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
       const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
@@ -399,7 +356,7 @@ function applyFilters() {
     if (rangeValue !== "all") {
       if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue) return false;
     }
-    // Class & Association Filter
+    // Class & Association Filter:
     if (selectedClass !== "All") {
       const classObj = classData.find(item => item.class === selectedClass);
       let classAssociations = [];
@@ -426,13 +383,18 @@ function applyFilters() {
     return true;
   });
   
-  // Sort filtered spells by level (ascending)
+  // Default sort: by level ascending.
   filteredSpells.sort((a, b) => getSpellLevel(a) - getSpellLevel(b));
   
   saveFiltersToLocalStorage();
   updateActiveFiltersDisplay();
   renderSpells();
 }
+
+// -------------------------------
+// Global variable for sorting by Actions
+// -------------------------------
+let actionSortAsc = true;
 
 // -------------------------------
 // Event Listeners Setup
@@ -461,30 +423,43 @@ function setupEventListeners() {
     document.getElementById('spellModal').classList.add('hidden');
   });
   
-  // Active filter tags (clear individual filters)
+  // Active filter tags
   document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
     if (e.target && e.target.getAttribute('data-filter')) {
       const filterType = e.target.getAttribute('data-filter');
       if (filterType === 'search') {
         document.getElementById('searchInput').value = '';
-      } else if (filterType === 'traditions') {
-        // No traditions dropdown now.
-      } else if (filterType === 'actions') {
-        document.getElementById('actionsSelect').value = 'All';
       } else if (filterType === 'range') {
         document.getElementById('rangeSelect').value = 'All';
       } else if (filterType === 'class') {
-        document.getElementById('classSelect').value = 'All';
-        document.getElementById('associationSelect').value = 'All';
-        document.getElementById('associationContainer').style.display = "none";
+        // Do nothing for Class (non-removable)
       } else if (filterType === 'association') {
         document.getElementById('associationSelect').value = 'All';
       }
       applyFilters();
+    } else if (e.target.getAttribute("data-filter") === "actions-sort") {
+      // Not used; we'll handle actions sort below.
     }
   });
   
-  // Dynamic search: as you type in the search input, apply filters.
+  // Special handling for Actions active filter tag to toggle sort order.
+  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
+    if (e.target && e.target.getAttribute("data-filter") === "actions-sort") {
+      actionSortAsc = !actionSortAsc;
+      // Sort filteredSpells by action cost (numerically).
+      filteredSpells.sort((a, b) => {
+        const aVal = parseInt(a.action, 10) || 0;
+        const bVal = parseInt(b.action, 10) || 0;
+        return actionSortAsc ? aVal - bVal : bVal - aVal;
+      });
+      renderSpells();
+    }
+  });
+  
+  // For the Actions active filter tag, we now set its data-filter to "actions-sort"
+  // This is done in updateActiveFiltersDisplay (see below).
+  
+  // Dynamic search: as you type, apply filters.
   document.getElementById('searchInput').addEventListener('input', () => {
     applyFilters();
   });
