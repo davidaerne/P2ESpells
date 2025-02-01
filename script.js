@@ -98,15 +98,15 @@ function renderSpells() {
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
 
-    // Create the title row (light grey) for columns: "Spell Level" and "Actions"
-    const titleRow = document.createElement('div');
-    titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
-    titleRow.innerHTML = `<div>Spell Level</div><div>Actions</div>`;
-    groupDiv.appendChild(titleRow);
-
-    // Create the container for the spell cards
+    // Create the container for the spell cards; it is toggled based on whether the group is expanded.
     const spellsContainer = document.createElement('div');
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
+
+    // Create the title row (light grey) for columns: "Spell Name" and "Actions"
+    const titleRow = document.createElement('div');
+    titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
+    titleRow.innerHTML = `<div>Spell Name</div><div>Actions</div>`;
+    spellsContainer.appendChild(titleRow);
 
     // For each spell, create a card element
     spellsByLevel[level].forEach(spell => {
@@ -124,6 +124,7 @@ function renderSpells() {
       `;
       // Attach the click event directly to show spell details
       card.addEventListener('click', (e) => {
+        // Prevent the event from bubbling up to the header (which toggles the group)
         e.stopPropagation();
         showSpellDetails(spell);
       });
