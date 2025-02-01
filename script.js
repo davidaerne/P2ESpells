@@ -332,13 +332,16 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
 
-        // ✅ Ensure the Association Dropdown is updated correctly
+        // ✅ Ensure the Association Dropdown updates correctly
         setTimeout(() => {
-            updateAssociationSelect(); // ✅ Update the Association dropdown first
+            updateAssociationSelect(); // Update the Association dropdown first
             document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
-        }, 50); // Small delay to ensure dropdown updates before setting value
 
+            // ✅ Apply filters immediately so they affect the spell list
+            applyFilters();
+        }, 50); // Small delay to ensure dropdown updates before setting value
     }
+
     updateActiveFiltersDisplay();
 }
 
