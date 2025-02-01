@@ -30,10 +30,14 @@ function toggleLevel(level) {
     renderSpells();
 }
 
+// -------------------------------
+// Rendering Functions
+// -------------------------------
+
 // Render spells grouped by level
 function renderSpells() {
     const container = document.getElementById('spellContainer');
-
+    
     if (filteredSpells.length === 0) {
         container.innerHTML = `
             <div class="text-center py-8 text-gray-600">
@@ -77,7 +81,7 @@ function renderSpells() {
         `).join('');
 }
 
-// Show spell details in the detail modal
+// Show spell details in a modal window (this functionality remains the same)
 function showSpellDetails(spell) {
     const modal = document.getElementById('spellModal');
     const title = document.getElementById('spellTitle');
@@ -122,7 +126,7 @@ function showSpellDetails(spell) {
         </div>
     `;
 
-    // (Optional) Save the last viewed spell to localStorage if desired
+    // Optional: Save the last viewed spell to localStorage if desired.
     // localStorage.setItem("lastSelectedSpell", JSON.stringify(spell));
 
     modal.classList.remove('hidden');
@@ -215,7 +219,7 @@ function clearFilters() {
     Array.from(traditionsSelect.options).forEach(option => option.selected = false);
 
     localStorage.removeItem("spellFilterState");
-    
+
     filteredSpells = allSpells;
     renderSpells();
 }
