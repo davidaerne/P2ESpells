@@ -308,12 +308,12 @@ function sortSpellsByAction(spells, level) {
 // -------------------------------
 function saveFiltersToLocalStorage() {
     const filterState = {
-        searchTerm: document.getElementById('searchInput').value,
         maxLevel: document.getElementById('maxLevelSelect').value,
         actionsValue: document.getElementById('actionsSelect').value,
         rangeValue: document.getElementById('rangeSelect').value,
         selectedClass: document.getElementById('classSelect').value,
-        selectedAssociation: document.getElementById('associationSelect').value
+        selectedAssociation: document.getElementById('associationSelect').value,
+        selectedTradition: document.getElementById('traditionSelect')?.value || 'All' // Add this line
     };
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
@@ -328,7 +328,15 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
         document.getElementById('classSelect').dispatchEvent(new Event('change'));
-        document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+        
+        // Wait for the association select to be populated before setting its value
+        setTimeout(() => {
+            document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+            if (document.getElementById('traditionSelect')) {
+                document.getElementById('traditionSelect').value = filterState.selectedTradition || "All";
+            }
+            applyFilters(); // Apply filters after all values are set
+        }, 0);
     }
 }
 
