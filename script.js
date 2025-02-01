@@ -460,34 +460,28 @@ function setupEventListeners() {
   });
   
   // Active Filter tags: removal for search, range, and association.
-document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
+document.getElementById('activeFilterDisplay').addEventListener('click', function (e) {
     if (!e.target || !e.target.getAttribute('data-filter')) return;
-    
+
     const filterType = e.target.getAttribute('data-filter');
+    console.log("Clicked filter:", filterType); // ✅ Debugging log
 
-    if (filterType === 'search') {
-        document.getElementById('searchInput').value = '';
-    } else if (filterType === 'range') {
-        document.getElementById('rangeSelect').value = 'All';
-    } else if (filterType === 'association') {
-        document.getElementById('associationSelect').value = 'All';
-    } else if (filterType === 'actions-remove') {
-        document.getElementById('actionsSelect').value = 'All';
-    } else if (filterType === "actions-sort") {
-        e.preventDefault(); // Prevent any default behavior if it's a link
+    if (filterType === "actions-sort") {
+        e.preventDefault(); // ✅ Prevents navigation issues
 
-        // Toggle action sort order
-        actionSortAsc = !actionSortAsc;
+        console.log("Sorting actions..."); // ✅ Debugging log
+        actionSortAsc = !actionSortAsc; // Toggle sorting order
 
-        // Sort filteredSpells by numeric action value
+        // ✅ Sorting function
         filteredSpells.sort((a, b) => {
             const aVal = parseInt(a.action, 10) || 0;
             const bVal = parseInt(b.action, 10) || 0;
             return actionSortAsc ? aVal - bVal : bVal - aVal;
         });
 
+        console.log("Sort Order:", actionSortAsc ? "Ascending" : "Descending"); // ✅ Debugging log
         renderSpells();
-        return; // Stop further execution for sorting
+        return;
     }
 
     applyFilters();
