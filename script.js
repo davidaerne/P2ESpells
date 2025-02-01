@@ -184,48 +184,104 @@ function toggleLevel(level) {
   renderSpells();
 }
 
+/**
+ * Scans the provided text for any occurrences of numbers wrapped in vertical bars (e.g. |1|)
+ * and replaces each with an HTML <span> styled as a blue circle.
+ */
+function formatActionDetails(text) {
+  return text.replace(/\|(\d+)\|/g, function(match, number) {
+    return `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`;
+  });
+}
+
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
   const levelElem = document.getElementById('spellLevel');
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
+
+  // If a nethysUrl is provided, display the title as a clickable link
   if (spell.nethysUrl) {
     title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
   } else {
     title.textContent = spell.name;
   }
+
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
+
+  // Process the description:
+  // 1. Replace markdown-style bold (**text**) with <strong>text</strong>
+  // 2. Wrap any |X| patterns in blue circles.
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  description = formatActionDetails(description);
+
+  // Build the details HTML.
   let detailsHtml = '';
-  detailsHtml += `<div><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
-  if (spell.cast) {
-    detailsHtml += `<div><div class="font-semibold">Cast</div><div>${spell.cast}</div></div>`;
+
+  // Always show Traits
+  detailsHtml += `<div>
+                    <div class="font-semibold">Traits</div>
+                    <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
+                  </div>`;
+  
+  // Only include the Cast field if its value is not exactly "to" (case-insensitive)
+  if (spell.cast && spell.cast.trim().toLowerCase() !== "to") {
+    detailsHtml += `<div>
+                      <div class="font-semibold">Cast</div>
+                      <div>${spell.cast}</div>
+                    </div>`;
   }
+  
   if (spell.area) {
-    detailsHtml += `<div><div class="font-semibold">Area</div><div>${spell.area}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Area</div>
+                      <div>${spell.area}</div>
+                    </div>`;
   }
   if (spell.range) {
-    detailsHtml += `<div><div class="font-semibold">Range</div><div>${spell.range}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Range</div>
+                      <div>${spell.range}</div>
+                    </div>`;
   }
   if (spell.duration) {
-    detailsHtml += `<div><div class="font-semibold">Duration</div><div>${spell.duration}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Duration</div>
+                      <div>${spell.duration}</div>
+                    </div>`;
   }
   if (spell.defense) {
-    detailsHtml += `<div><div class="font-semibold">Defense</div><div>${spell.defense}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Defense</div>
+                      <div>${spell.defense}</div>
+                    </div>`;
   }
   if (spell.targets) {
-    detailsHtml += `<div><div class="font-semibold">Targets</div><div>${spell.targets}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Targets</div>
+                      <div>${spell.targets}</div>
+                    </div>`;
   }
   if (spell.trigger) {
-    detailsHtml += `<div><div class="font-semibold">Trigger</div><div>${spell.trigger}</div></div>`;
+    detailsHtml += `<div>
+                      <div class="font-semibold">Trigger</div>
+                      <div>${spell.trigger}</div>
+                    </div>`;
   }
-  detailsHtml += `<div><div class="font-semibold">Description</div><div class="whitespace-pre-wrap">${description}</div></div>`;
+  
+  // Always show the Description last.
+  detailsHtml += `<div>
+                    <div class="font-semibold">Description</div>
+                    <div class="whitespace-pre-wrap">${description}</div>
+                  </div>`;
+  
   details.innerHTML = detailsHtml;
   modal.classList.remove('hidden');
 }
+
 
 // -------------------------------
 // Active Filters Display
