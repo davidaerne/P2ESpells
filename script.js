@@ -467,9 +467,9 @@ document.getElementById('activeFilterDisplay').addEventListener('click', functio
     console.log("Clicked filter:", filterType); // ✅ Debugging log
 
     if (filterType === "actions-sort") {
-        e.preventDefault(); // ✅ Prevents navigation issues
+        console.log("✅ Sorting actions fired!"); // ✅ Confirm event is triggered
+        e.preventDefault();
 
-        console.log("Sorting actions..."); // ✅ Debugging log
         actionSortAsc = !actionSortAsc; // Toggle sorting order
 
         // ✅ Sorting function
