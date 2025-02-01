@@ -116,6 +116,64 @@ function updateAssociationSelect() {
     }
 }
 
+// -------------------------------
+// Update Active Filters Display
+// -------------------------------
+function updateActiveFiltersDisplay() {
+    const activeContainer = document.getElementById('activeFilterDisplay');
+    activeContainer.innerHTML = "";
+    
+    // Class filter (with association if selected)
+    const selectedClass = document.getElementById('classSelect').value;
+    if (selectedClass !== "All") {
+        let classText = `Class: ${selectedClass}`;
+        const selectedAssociation = document.getElementById('associationSelect').value;
+        if (selectedAssociation !== "All") {
+            classText += ` (${selectedAssociation})`;
+        }
+        const classTag = document.createElement('span');
+        classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+        classTag.textContent = classText;
+        activeContainer.appendChild(classTag);
+    }
+    
+    // Spell Level filter
+    const maxLevel = document.getElementById('maxLevelSelect').value;
+    if (maxLevel !== "1") { // Only show if not default
+        const spellLevelTag = document.createElement('span');
+        spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+        spellLevelTag.textContent = "Spell Level " + maxLevel;
+        activeContainer.appendChild(spellLevelTag);
+    }
+    
+    // Actions filter (with remove option)
+    const actionsValue = document.getElementById('actionsSelect').value;
+    if (actionsValue !== "All") {
+        const actionsTag = document.createElement('span');
+        actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+        actionsTag.innerHTML = `Actions: ${actionsValue} <span class="ml-2 cursor-pointer" data-filter="actions">×</span>`;
+        activeContainer.appendChild(actionsTag);
+    }
+    
+    // Range filter (with remove option)
+    const rangeValue = document.getElementById('rangeSelect').value;
+    if (rangeValue !== "All") {
+        const rangeTag = document.createElement('span');
+        rangeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+        rangeTag.innerHTML = `Range: ${rangeValue} <span class="ml-2 cursor-pointer" data-filter="range">×</span>`;
+        activeContainer.appendChild(rangeTag);
+    }
+    
+    // Search filter (with remove option)
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    if (searchTerm !== "") {
+        const searchTag = document.createElement('span');
+        searchTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+        searchTag.innerHTML = `Search: ${searchTerm} <span class="ml-2 cursor-pointer" data-filter="search">×</span>`;
+        activeContainer.appendChild(searchTag);
+    }
+}
+
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
@@ -188,6 +246,7 @@ function applyFilters() {
     });
 
     saveFiltersToLocalStorage();
+    updateActiveFiltersDisplay(); 
     renderSpells();
 }
 
@@ -464,6 +523,25 @@ function setupEventListeners() {
             document.getElementById('filterModal')?.classList.add('hidden');
         }
     });
+        document.getElementById('activeFilterDisplay').addEventListener('click', (e) => {
+        const filterElement = e.target.closest('[data-filter]');
+        if (filterElement) {
+            const filterType = filterElement.getAttribute('data-filter');
+            
+            switch(filterType) {
+                case 'search':
+                    document.getElementById('searchInput').value = '';
+                    break;
+                case 'range':
+                    document.getElementById('rangeSelect').value = 'All';
+                    break;
+                case 'actions':
+                    document.getElementById('actionsSelect').value = 'All';
+                    break;
+            }
+            
+            applyFilters(); // This will also update the active filters display
+        }
 }
 // -------------------------------
 // Initialize
