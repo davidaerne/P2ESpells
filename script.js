@@ -1,22 +1,21 @@
 // -------------------------------
-// Data for Pathfinder Classes (New Dataset)
+// Data for Pathfinder Classes
 // -------------------------------
 const classData = [
-  {"class": "Bard", "traits": ["occult"], "traditions": ["occult"]},
-  {"class": "Champion", "traits": ["divine"], "traditions": ["divine"]},
-  {"class": "Cleric", "traits": ["divine"], "traditions": ["divine"]},
-  {"class": "Druid", "traits": ["primal"], "traditions": ["primal"]},
-  {"class": "Magus", "traits": ["arcane"], "traditions": ["arcane"]},
-  {"class": "Oracle", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
-  {"class": "Psychic", "traits": ["occult"], "traditions": ["occult"]},
-  {"class": "Ranger", "traits": ["primal"], "traditions": ["primal"]},
-  {"class": "Sorcerer", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
-  {"class": "Summoner", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
-  {"class": "Thaumaturge", "traits": ["occult"], "traditions": ["occult"]},
-  {"class": "Witch", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
-  {"class": "Wizard", "traits": ["arcane"], "traditions": ["arcane"]}
+    {"class": "Bard", "traits": ["occult"], "traditions": ["occult"]},
+    {"class": "Champion", "traits": ["divine"], "traditions": ["divine"]},
+    {"class": "Cleric", "traits": ["divine"], "traditions": ["divine"]},
+    {"class": "Druid", "traits": ["primal"], "traditions": ["primal"]},
+    {"class": "Magus", "traits": ["arcane"], "traditions": ["arcane"]},
+    {"class": "Oracle", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
+    {"class": "Psychic", "traits": ["occult"], "traditions": ["occult"]},
+    {"class": "Ranger", "traits": ["primal"], "traditions": ["primal"]},
+    {"class": "Sorcerer", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
+    {"class": "Summoner", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
+    {"class": "Thaumaturge", "traits": ["occult"], "traditions": ["occult"]},
+    {"class": "Witch", "traits": ["arcane", "divine", "occult", "primal"], "traditions": ["arcane", "divine", "occult", "primal"]},
+    {"class": "Wizard", "traits": ["arcane"], "traditions": ["arcane"]}
 ];
-
 
 // -------------------------------
 // Global Variables
@@ -24,7 +23,6 @@ const classData = [
 let allSpells = [];
 let filteredSpells = [];
 let expandedLevel = null;
-// Track sorting state for each level
 let levelSortStates = {};
 
 // -------------------------------
@@ -60,6 +58,140 @@ function formatActionDetails(text) {
 }
 
 // -------------------------------
+// Filter Functions
+// -------------------------------
+function populateClassSelect() {
+    const classSelect = document.getElementById('classSelect');
+    classSelect.innerHTML = '<option value="All">All</option>';
+    classData.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.class;
+        opt.textContent = item.class;
+        classSelect.appendChild(opt);
+    });
+}
+
+function updateAssociationSelect() {
+    const selected = document.getElementById('classSelect').value;
+    const associationContainer = document.getElementById('associationContainer');
+    const associationSelect = document.getElementById('associationSelect');
+    
+    if (selected === "All") {
+        associationContainer.style.display = "none";
+        associationSelect.innerHTML = '<option value="All">All</option>';
+        return;
+    }
+
+    const classObj = classData.find(item => item.class === selected);
+    let associations = [];
+    if (classObj) {
+        if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
+            associations = associations.concat(classObj.traits);
+        }
+        if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
+            associations = associations.concat(classObj.traditions);
+        }
+        associations = [...new Set(associations)];
+    }
+
+    if (associations.length === 1) {
+        associationSelect.innerHTML = `
+            <option value="All">All</option>
+            <option value="${associations[0]}">${associations[0]}</option>
+        `;
+        associationSelect.value = associations[0];
+        associationContainer.style.display = "none";
+    } else if (associations.length > 1) {
+        associationContainer.style.display = "block";
+        associationSelect.innerHTML = '<option value="All">All</option>';
+        associations.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a;
+            opt.textContent = a;
+            associationSelect.appendChild(opt);
+        });
+    } else {
+        associationContainer.style.display = "none";
+        associationSelect.innerHTML = '<option value="All">All</option>';
+    }
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
+    const actionsSelectValue = document.getElementById('actionsSelect').value;
+    const rangeValue = document.getElementById('rangeSelect').value.toLowerCase();
+    const selectedClass = document.getElementById('classSelect').value;
+    const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
+
+    filteredSpells = allSpells.filter(spell => {
+        // Search Filter
+        if (searchTerm) {
+            const inName = spell.name.toLowerCase().includes(searchTerm);
+            const inTraits = (spell.traits || []).some(t => t.toLowerCase().includes(searchTerm));
+            if (!inName && !inTraits) return false;
+        }
+
+        // Level Filter
+        if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) return false;
+
+        // Actions Filter
+        if (actionsSelectValue !== "All") {
+            const selectedAction = parseInt(actionsSelectValue, 10);
+            if (!spell.action) return false;
+            const spellAction = parseInt(spell.action, 10);
+            if (isNaN(spellAction)) return false;
+            if (spell.actionMax) {
+                const spellActionMax = parseInt(spell.actionMax, 10);
+                if (!isNaN(spellActionMax)) {
+                    if (selectedAction < spellAction || selectedAction > spellActionMax) return false;
+                } else {
+                    if (spellAction !== selectedAction) return false;
+                }
+            } else {
+                if (spellAction !== selectedAction) return false;
+            }
+        }
+
+        // Range Filter
+        if (rangeValue !== "all") {
+            if (!spell.range || spell.range.toLowerCase() !== rangeValue) return false;
+        }
+
+        // Class & Association Filter
+        if (selectedClass !== "All") {
+            const classObj = classData.find(item => item.class === selectedClass);
+            let classAssociations = [];
+            if (classObj) {
+                if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
+                    classAssociations = classAssociations.concat(classObj.traits.map(t => t.toLowerCase()));
+                }
+                if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
+                    classAssociations = classAssociations.concat(classObj.traditions.map(t => t.toLowerCase()));
+                }
+            }
+
+            if (selectedAssociation !== "all") {
+                const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
+                                 (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
+                if (!assocMatch) return false;
+            } else {
+                if (classAssociations.length > 0) {
+                    const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
+                                         (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
+                    if (!hasAssociation) return false;
+                }
+            }
+        }
+
+        return true;
+    });
+
+    saveFiltersToLocalStorage();
+    renderSpells();
+}
+
+// -------------------------------
 // Sorting Functions
 // -------------------------------
 function initializeLevelSort(level) {
@@ -84,6 +216,35 @@ function sortSpellsByAction(spells, level) {
         const bVal = parseInt(b.action, 10) || 0;
         return isDesc ? bVal - aVal : aVal - bVal;
     });
+}
+
+// -------------------------------
+// Local Storage Functions
+// -------------------------------
+function saveFiltersToLocalStorage() {
+    const filterState = {
+        searchTerm: document.getElementById('searchInput').value,
+        maxLevel: document.getElementById('maxLevelSelect').value,
+        actionsValue: document.getElementById('actionsSelect').value,
+        rangeValue: document.getElementById('rangeSelect').value,
+        selectedClass: document.getElementById('classSelect').value,
+        selectedAssociation: document.getElementById('associationSelect').value
+    };
+    localStorage.setItem("spellFilterState", JSON.stringify(filterState));
+}
+
+function loadFiltersFromLocalStorage() {
+    const stored = localStorage.getItem("spellFilterState");
+    if (stored) {
+        const filterState = JSON.parse(stored);
+        document.getElementById('searchInput').value = filterState.searchTerm || "";
+        document.getElementById('maxLevelSelect').value = filterState.maxLevel || "1";
+        document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
+        document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
+        document.getElementById('classSelect').value = filterState.selectedClass || "All";
+        document.getElementById('classSelect').dispatchEvent(new Event('change'));
+        document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+    }
 }
 
 // -------------------------------
@@ -137,7 +298,6 @@ function renderSpells() {
                 const titleRow = document.createElement('div');
                 titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
                 
-                // Initialize sort state if needed
                 initializeLevelSort(level);
                 const sortDirection = levelSortStates[level].isDesc ? '↓' : '↑';
                 
@@ -152,7 +312,6 @@ function renderSpells() {
                     </div>
                 `;
 
-                // Add sorting event listener
                 const sortLink = titleRow.querySelector('[data-filter="actions-sort"]');
                 sortLink.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -164,10 +323,9 @@ function renderSpells() {
 
                 spellsContainer.appendChild(titleRow);
 
-                // Sort and render spells for this level
+                // Sort and render spells
                 const sortedSpells = sortSpellsByAction(spellsByLevel[level], level);
 
-                // Render spell cards
                 sortedSpells.forEach(spell => {
                     const card = document.createElement('div');
                     card.className = "p-4 hover:bg-gray-50 cursor-pointer";
