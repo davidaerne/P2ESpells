@@ -114,6 +114,10 @@ function showSpellDetails(spell) {
   title.textContent = spell.name;
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
 
+  // Process description to replace **text** with <strong>text</strong>
+  let description = spell.description || 'No description available.';
+  description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
   details.innerHTML = `
     <div>
       <div class="font-semibold">Traits</div>
@@ -145,7 +149,7 @@ function showSpellDetails(spell) {
     ` : ''}
     <div>
       <div class="font-semibold">Description</div>
-      <div class="whitespace-pre-wrap">${spell.description || 'No description available.'}</div>
+      <div class="whitespace-pre-wrap">${description}</div>
     </div>
   `;
 
