@@ -19,7 +19,7 @@ function getSpellLevel(spell) {
   return isNaN(num) ? -1 : num;
 }
 
-// Toggle spell level expansion and save state to localStorage
+// Toggle spell level expansion and save the state to localStorage
 function toggleLevel(level) {
   if (expandedLevel === level) {
     expandedLevel = null;
@@ -47,7 +47,7 @@ function renderSpells() {
     return;
   }
 
-  // Group spells by level (cantrips have level 0)
+  // Group spells by level
   const spellsByLevel = filteredSpells.reduce((acc, spell) => {
     const level = getSpellLevel(spell);
     if (!acc[level]) acc[level] = [];
@@ -55,15 +55,15 @@ function renderSpells() {
     return acc;
   }, {});
 
-  // Sort levels numerically
+  // Sort the levels numerically
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
 
   sortedLevels.forEach(level => {
-    // Create group container
+    // Create the group container
     const groupDiv = document.createElement('div');
     groupDiv.className = "bg-white rounded-lg shadow mb-4";
 
-    // Create header that toggles expansion
+    // Create the header that toggles expansion
     const headerDiv = document.createElement('div');
     headerDiv.className = "p-4 font-semibold text-lg border-b cursor-pointer hover:bg-gray-50";
     headerDiv.innerHTML = `
@@ -78,11 +78,11 @@ function renderSpells() {
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
 
-    // Create container for spell cards
+    // Create the container for the spell cards
     const spellsContainer = document.createElement('div');
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
 
-    // Create each spell card
+    // For each spell, create a card element
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
@@ -90,9 +90,10 @@ function renderSpells() {
         <div class="font-medium">${spell.name}</div>
         <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
       `;
-      // Attach click event to open modal with spell details
+      // Attach the click event directly to show spell details
       card.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent header toggle
+        // Prevent the event from bubbling up to the header (which toggles the group)
+        e.stopPropagation();
         showSpellDetails(spell);
       });
       spellsContainer.appendChild(card);
@@ -103,7 +104,7 @@ function renderSpells() {
   });
 }
 
-// Show spell details in the modal
+// Show spell details in a modal window
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
@@ -113,7 +114,7 @@ function showSpellDetails(spell) {
   title.textContent = spell.name;
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
 
-  // Replace any **bold** markdown with HTML <strong> tags
+  // Process description to replace **text** with <strong>text</strong>
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
@@ -156,59 +157,13 @@ function showSpellDetails(spell) {
 }
 
 // -------------------------------
-// Active Filters Management
+// Active Filter Display
 // -------------------------------
 
-function updateActiveFilters() {
-  const activeFiltersContainer = document.getElementById('activeFilters');
-  activeFiltersContainer.innerHTML = '';
-  const filters = [];
-  
-  const searchValue = document.getElementById('searchInput').value.trim();
-  const typeValue = document.getElementById('typeSelect').value;
-  const levelValue = document.getElementById('levelSelect').value;
-  const traditionsSelect = document.getElementById('traditionsSelect');
-  const traditionsValues = Array.from(traditionsSelect.selectedOptions).map(o => o.value);
-  
-  if (searchValue) {
-    filters.push({name: 'Search', value: searchValue});
-  }
-  if (typeValue !== 'All') {
-    filters.push({name: 'Type', value: typeValue});
-  }
-  // Always show the level filter
-  filters.push({name: 'Level', value: levelValue});
-  if (traditionsValues.length > 0) {
-    filters.push({name: 'Traditions', value: traditionsValues.join(', ')});
-  }
-  
-  if (filters.length > 0) {
-    const filtersHTML = filters.map(filter => {
-      return `<span class="bg-blue-100 text-blue-800 rounded px-2 py-1 mr-2 inline-flex items-center">
-        ${filter.name}: ${filter.value}
-        <button class="ml-1 text-blue-500 hover:text-blue-700" data-filter="${filter.name}">x</button>
-      </span>`;
-    }).join('');
-    activeFiltersContainer.innerHTML = filtersHTML;
-    // Attach click events for each "x" to reset that filter
-    activeFiltersContainer.querySelectorAll('button').forEach(button => {
-      button.addEventListener('click', function(){
-         const filterName = this.getAttribute('data-filter');
-         if (filterName === 'Search') {
-           document.getElementById('searchInput').value = '';
-         } else if (filterName === 'Type') {
-           document.getElementById('typeSelect').value = 'All';
-         } else if (filterName === 'Level') {
-           document.getElementById('levelSelect').value = '1';
-         } else if (filterName === 'Traditions') {
-           const traditionsSelect = document.getElementById('traditionsSelect');
-           Array.from(traditionsSelect.options).forEach(option => option.selected = false);
-         }
-         applyFilters();
-         updateActiveFilters();
-      });
-    });
-  }
+function updateActiveFilterDisplay() {
+  const maxLevel = document.getElementById('maxLevelSelect').value;
+  const activeDisplay = document.getElementById('activeFilterDisplay');
+  activeDisplay.innerHTML = `Showing spells up to Level ${maxLevel}`;
 }
 
 // -------------------------------
@@ -219,11 +174,11 @@ function saveFiltersToLocalStorage() {
   const searchTerm = document.getElementById('searchInput').value;
   const type = document.getElementById('typeSelect').value;
   const sortBy = document.getElementById('sortSelect').value;
-  const level = document.getElementById('levelSelect').value;
   const traditionsSelect = document.getElementById('traditionsSelect');
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
+  const maxLevel = document.getElementById('maxLevelSelect').value;
 
-  const filterState = { searchTerm, type, sortBy, level, selectedTraditions };
+  const filterState = { searchTerm, type, sortBy, selectedTraditions, maxLevel };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
@@ -234,12 +189,13 @@ function loadFiltersFromLocalStorage() {
     document.getElementById('searchInput').value = filterState.searchTerm || '';
     document.getElementById('typeSelect').value = filterState.type || 'All';
     document.getElementById('sortSelect').value = filterState.sortBy || 'Level';
-    document.getElementById('levelSelect').value = filterState.level || '1';
+    document.getElementById('maxLevelSelect').value = filterState.maxLevel || '1';
     const traditionsSelect = document.getElementById('traditionsSelect');
     for (const option of traditionsSelect.options) {
       option.selected = filterState.selectedTraditions && filterState.selectedTraditions.includes(option.value);
     }
   }
+  updateActiveFilterDisplay();
 }
 
 // -------------------------------
@@ -249,40 +205,41 @@ function loadFiltersFromLocalStorage() {
 function applyFilters() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const type = document.getElementById('typeSelect').value;
-  const selectedLevel = document.getElementById('levelSelect').value;
   const sortBy = document.getElementById('sortSelect').value;
   const traditionsSelect = document.getElementById('traditionsSelect');
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
+  const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
 
   filteredSpells = allSpells.filter(spell => {
     const traditions = (spell.traditions || []).map(t => t.toLowerCase());
     const traits = (spell.traits || []).map(t => t.toLowerCase());
     const combined = [...traditions, ...traits];
-    
+
+    // Filter by selected traditions if any
     if (selectedTraditions.length > 0 && !selectedTraditions.some(t => combined.includes(t.toLowerCase()))) {
       return false;
     }
+    // Filter by type (Cantrip/Spell)
+    if (type === 'Cantrip' && !isCantrip(spell)) return false;
+    if (type === 'Spell' && isCantrip(spell)) return false;
+
+    // Filter by search term in name or traits
     if (searchTerm) {
       const inName = spell.name.toLowerCase().includes(searchTerm);
       const inTraits = traits.some(t => t.includes(searchTerm));
       if (!inName && !inTraits) return false;
     }
-    
-    // Filtering based on Type and Level:
-    if (type === 'Cantrip') {
-      // Only show cantrips if Type is set to "Cantrip"
-      return isCantrip(spell);
-    } else if (type === 'Spell') {
-      // Show only non-cantrip spells that match the selected level
-      if (isCantrip(spell)) return false;
-      return parseInt(spell.level, 10) === parseInt(selectedLevel, 10);
-    } else { // type === 'All'
-      // Always show cantrips; for non-cantrips, show if they match the selected level
-      if (isCantrip(spell)) return true;
-      return parseInt(spell.level, 10) === parseInt(selectedLevel, 10);
+
+    // New Level Filter:
+    // If the spell is not a cantrip and its level is greater than the selected maxLevel, exclude it.
+    if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) {
+      return false;
     }
+
+    return true;
   });
 
+  // Sort the filtered spells
   if (sortBy === 'Level') {
     filteredSpells.sort((a, b) => getSpellLevel(a) - getSpellLevel(b));
   } else {
@@ -290,8 +247,8 @@ function applyFilters() {
   }
 
   saveFiltersToLocalStorage();
+  updateActiveFilterDisplay();
   renderSpells();
-  updateActiveFilters();
 }
 
 // -------------------------------
