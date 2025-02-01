@@ -98,21 +98,24 @@ function renderSpells() {
     headerDiv.addEventListener('click', () => toggleLevel(level));
     groupDiv.appendChild(headerDiv);
 
-    // Create the container for the spell cards; it is toggled based on whether the group is expanded.
-    const spellsContainer = document.createElement('div');
-    spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
-
     // Create the title row (light grey) for columns: "Spell Name" and "Actions"
     const titleRow = document.createElement('div');
     titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
     titleRow.innerHTML = `<div>Spell Name</div><div>Actions</div>`;
-    spellsContainer.appendChild(titleRow);
+    
+    // Create the container for the spell cards; only show title row if group is expanded.
+    const spellsContainer = document.createElement('div');
+    spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
+
+    // If the group is expanded, insert the title row.
+    if (expandedLevel === level) {
+      spellsContainer.appendChild(titleRow);
+    }
 
     // For each spell, create a card element
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
-      // Create a flex container with spell info on the left and the action text on the right
       card.innerHTML = `
         <div class="flex justify-between items-center">
           <div>
@@ -122,9 +125,7 @@ function renderSpells() {
           ${getActionBadgeHtml(spell, "text-xs")}
         </div>
       `;
-      // Attach the click event directly to show spell details
       card.addEventListener('click', (e) => {
-        // Prevent the event from bubbling up to the header (which toggles the group)
         e.stopPropagation();
         showSpellDetails(spell);
       });
@@ -136,6 +137,7 @@ function renderSpells() {
   });
 }
 
+// Show spell details in a modal window
 function showSpellDetails(spell) {
   const modal = document.getElementById('spellModal');
   const title = document.getElementById('spellTitle');
@@ -143,30 +145,26 @@ function showSpellDetails(spell) {
   const details = document.getElementById('spellDetails');
   const actionsElem = document.getElementById('spellActions');
 
-  // If a nethysUrl is provided, make the title a clickable link styled in blue and underlined.
+  // If nethysUrl exists, display the title as a clickable link
   if (spell.nethysUrl) {
     title.innerHTML = `<a href="${spell.nethysUrl}" target="_blank" class="text-blue-600 underline">${spell.name}</a>`;
   } else {
     title.textContent = spell.name;
   }
-
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
 
-  // Process the description to convert markdown-style bold (**text**) to <strong>text</strong>
+  // Process description for markdown bold
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  // Build the details HTML. Only include rows for properties that have a value.
+  // Build details HTML. Only include properties that exist.
   let detailsHtml = '';
 
-  // Traits (always shown)
   detailsHtml += `<div>
                     <div class="font-semibold">Traits</div>
                     <div>${spell.traits ? spell.traits.join(', ') : 'None'}</div>
                   </div>`;
-
-  // Additional properties:
   if (spell.cast) {
     detailsHtml += `<div>
                       <div class="font-semibold">Cast</div>
@@ -209,13 +207,10 @@ function showSpellDetails(spell) {
                       <div>${spell.trigger}</div>
                     </div>`;
   }
-
-  // Always show Description at the end.
   detailsHtml += `<div>
                     <div class="font-semibold">Description</div>
                     <div class="whitespace-pre-wrap">${description}</div>
                   </div>`;
-
   details.innerHTML = detailsHtml;
 
   modal.classList.remove('hidden');
@@ -227,9 +222,9 @@ function showSpellDetails(spell) {
 
 function updateActiveFiltersDisplay() {
   const activeContainer = document.getElementById('activeFilterDisplay');
-  activeContainer.innerHTML = ''; // clear previous tags
+  activeContainer.innerHTML = '';
 
-  // Always show Spell Level filter (static tag)
+  // Always show Spell Level filter
   const maxLevel = document.getElementById('maxLevelSelect').value;
   const spellLevelTag = document.createElement('span');
   spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
@@ -243,6 +238,15 @@ function updateActiveFiltersDisplay() {
     actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
     actionsTag.innerHTML = `Actions: ${actionsValue} <span class="ml-2 cursor-pointer" data-filter="actions">×</span>`;
     activeContainer.appendChild(actionsTag);
+  }
+
+  // Show Range filter if active (not "All")
+  const rangeValue = document.getElementById('rangeSelect').value;
+  if (rangeValue !== "All") {
+    const rangeTag = document.createElement('span');
+    rangeTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
+    rangeTag.innerHTML = `Range: ${rangeValue} <span class="ml-2 cursor-pointer" data-filter="range">×</span>`;
+    activeContainer.appendChild(rangeTag);
   }
 
   // Show Search filter if active
@@ -286,8 +290,9 @@ function saveFiltersToLocalStorage() {
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
   const maxLevel = document.getElementById('maxLevelSelect').value;
   const actionsValue = document.getElementById('actionsSelect').value;
+  const rangeValue = document.getElementById('rangeSelect').value;
 
-  const filterState = { searchTerm, type, sortBy, selectedTraditions, maxLevel, actionsValue };
+  const filterState = { searchTerm, type, sortBy, selectedTraditions, maxLevel, actionsValue, rangeValue };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
@@ -300,6 +305,7 @@ function loadFiltersFromLocalStorage() {
     document.getElementById('sortSelect').value = filterState.sortBy || 'Level';
     document.getElementById('maxLevelSelect').value = filterState.maxLevel || '1';
     document.getElementById('actionsSelect').value = filterState.actionsValue || 'All';
+    document.getElementById('rangeSelect').value = filterState.rangeValue || 'All';
     const traditionsSelect = document.getElementById('traditionsSelect');
     for (const option of traditionsSelect.options) {
       option.selected = filterState.selectedTraditions && filterState.selectedTraditions.includes(option.value);
@@ -320,6 +326,7 @@ function applyFilters() {
   const selectedTraditions = Array.from(traditionsSelect.selectedOptions).map(option => option.value);
   const maxLevel = parseInt(document.getElementById('maxLevelSelect').value, 10);
   const actionsSelectValue = document.getElementById('actionsSelect').value;
+  const rangeValue = document.getElementById('rangeSelect').value;
 
   filteredSpells = allSpells.filter(spell => {
     const traditions = (spell.traditions || []).map(t => t.toLowerCase());
@@ -348,7 +355,6 @@ function applyFilters() {
     }
 
     // Actions Filter:
-    // If a specific actions value is selected, then check:
     if (actionsSelectValue !== "All") {
       const selectedAction = parseInt(actionsSelectValue, 10);
       if (!spell.action) return false;
@@ -363,6 +369,14 @@ function applyFilters() {
         }
       } else {
         if (spellAction !== selectedAction) return false;
+      }
+    }
+
+    // Range Filter:
+    if (rangeValue !== "All") {
+      // Compare lower-case and trim both strings.
+      if (!spell.range || spell.range.toLowerCase().trim() !== rangeValue.toLowerCase().trim()) {
+        return false;
       }
     }
 
@@ -424,6 +438,8 @@ function setupEventListeners() {
         }
       } else if (filterType === 'actions') {
         document.getElementById('actionsSelect').value = 'All';
+      } else if (filterType === 'range') {
+        document.getElementById('rangeSelect').value = 'All';
       }
       applyFilters();
     }
