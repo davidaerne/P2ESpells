@@ -197,6 +197,7 @@ function renderSpells() {
 // -------------------------------
 function toggleLevel(level) {
     expandedLevel = (expandedLevel === level) ? null : level;
+    localStorage.setItem("expandedLevel", expandedLevel || '');
     renderSpells();
 }
 
@@ -216,6 +217,20 @@ function showSpellDetails(spell) {
     
     let detailsHtml = '';
     detailsHtml += `<div class="mb-4"><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
+    
+    // Additional spell details
+    if (spell.cast && spell.cast.trim().toLowerCase() !== "to") {
+        detailsHtml += `<div class="mb-4"><div class="font-semibold">Cast</div><div>${spell.cast}</div></div>`;
+    }
+    if (spell.area) {
+        detailsHtml += `<div class="mb-4"><div class="font-semibold">Area</div><div>${spell.area}</div></div>`;
+    }
+    if (spell.range) {
+        detailsHtml += `<div class="mb-4"><div class="font-semibold">Range</div><div>${spell.range}</div></div>`;
+    }
+    if (spell.duration) {
+        detailsHtml += `<div class="mb-4"><div class="font-semibold">Duration</div><div>${spell.duration}</div></div>`;
+    }
     if (spell.description) {
         detailsHtml += `<div><div class="font-semibold">Description</div><div class="whitespace-pre-wrap">${formatActionDetails(spell.description)}</div></div>`;
     }
@@ -223,25 +238,6 @@ function showSpellDetails(spell) {
     details.innerHTML = detailsHtml;
     modal.classList.remove('hidden');
 }
-
-// -------------------------------
-// Initialize
-// -------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded');
-    fetchSpells();
-    
-    // Add modal close handlers
-    document.getElementById('spellModal')?.addEventListener('click', (e) => {
-        if (e.target === document.getElementById('spellModal')) {
-            document.getElementById('spellModal').classList.add('hidden');
-        }
-    });
-    
-    document.getElementById('closeSpellBtn')?.addEventListener('click', () => {
-        document.getElementById('spellModal').classList.add('hidden');
-    });
-});
 
 // -------------------------------
 // Fetch Spells Data
@@ -261,3 +257,69 @@ async function fetchSpells() {
             `<div class="text-red-600">Error loading spells: ${err.message}</div>`;
     }
 }
+
+function setupEventListeners() {
+    // Filter modal events
+    document.getElementById('filterBtn')?.addEventListener('click', () => {
+        document.getElementById('filterModal').classList.remove('hidden');
+    });
+    
+    document.getElementById('closeFilterBtn')?.addEventListener('click', () => {
+        document.getElementById('filterModal').classList.add('hidden');
+    });
+    
+    document.getElementById('applyFilterBtn')?.addEventListener('click', () => {
+        applyFilters();
+        document.getElementById('filterModal').classList.add('hidden');
+    });
+    
+    // Class selection change
+    document.getElementById('classSelect')?.addEventListener('change', updateAssociationSelect);
+    
+    // Dynamic search
+    document.getElementById('searchInput')?.addEventListener('input', () => {
+        applyFilters();
+    });
+    
+    // Modal close events
+    document.getElementById('spellModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('spellModal')) {
+            document.getElementById('spellModal').classList.add('hidden');
+        }
+    });
+    
+    document.getElementById('closeSpellBtn')?.addEventListener('click', () => {
+        document.getElementById('spellModal').classList.add('hidden');
+    });
+    
+    // Filter modal outside click
+    document.getElementById('filterModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('filterModal')) {
+            document.getElementById('filterModal').classList.add('hidden');
+        }
+    });
+    
+    // Escape key handler
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('spellModal')?.classList.add('hidden');
+            document.getElementById('filterModal')?.classList.add('hidden');
+        }
+    });
+}
+// -------------------------------
+// Initialize
+// -------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+    populateClassSelect();
+    loadFiltersFromLocalStorage();
+    setupEventListeners();
+    fetchSpells();
+    
+    // Restore expanded level from localStorage
+    const storedLevel = localStorage.getItem("expandedLevel");
+    if (storedLevel) {
+        expandedLevel = storedLevel;
+    }
+});
