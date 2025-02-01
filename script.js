@@ -325,18 +325,24 @@ function loadFiltersFromLocalStorage() {
     const stored = localStorage.getItem("spellFilterState");
     if (stored) {
         const filterState = JSON.parse(stored);
+
         document.getElementById('searchInput').value = filterState.searchTerm || "";
         document.getElementById('maxLevelSelect').value = filterState.maxLevel || "1";
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
-        // Dispatch a change event to repopulate the association dropdown.
-        document.getElementById('classSelect').dispatchEvent(new Event('change'));
-        document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+
+        // ✅ Ensure Association Dropdown is Updated
+        document.getElementById('classSelect').dispatchEvent(new Event('change')); // Triggers updateAssociationSelect()
+        
+        setTimeout(() => {
+            document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+        }, 200); // Small delay to ensure dropdown is updated
 
     }
     updateActiveFiltersDisplay();
 }
+
 
 // -------------------------------
 // Rendering Functions
