@@ -332,16 +332,16 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
 
-        // ✅ Ensure Association Dropdown is Updated
-        document.getElementById('classSelect').dispatchEvent(new Event('change')); // Triggers updateAssociationSelect()
-        
+        // ✅ Ensure the Association Dropdown is updated correctly
         setTimeout(() => {
+            updateAssociationSelect(); // ✅ Update the Association dropdown first
             document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
-        }, 200); // Small delay to ensure dropdown is updated
+        }, 50); // Small delay to ensure dropdown updates before setting value
 
     }
     updateActiveFiltersDisplay();
 }
+
 
 
 // -------------------------------
