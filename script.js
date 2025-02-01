@@ -19,6 +19,25 @@ function getSpellLevel(spell) {
   return isNaN(num) ? -1 : num;
 }
 
+/**
+ * Returns the HTML for the action badge.  
+ * If both spell.action and spell.actionMax exist and differ, returns "action-actionMax".
+ * Otherwise, returns just the action.
+ * The sizeClass parameter lets you specify Tailwind classes (e.g. "w-6 h-6 text-xs" for small badges).
+ */
+function getActionBadgeHtml(spell, sizeClass) {
+  if (spell.action) {
+    let badgeText = '';
+    if (spell.actionMax && spell.actionMax !== spell.action) {
+      badgeText = spell.action + '-' + spell.actionMax;
+    } else {
+      badgeText = spell.action;
+    }
+    return `<span class="inline-flex items-center justify-center bg-blue-600 text-white font-bold rounded-full ${sizeClass}">${badgeText}</span>`;
+  }
+  return '';
+}
+
 // Toggle spell level expansion and save the state to localStorage
 function toggleLevel(level) {
   if (expandedLevel === level) {
@@ -86,9 +105,15 @@ function renderSpells() {
     spellsByLevel[level].forEach(spell => {
       const card = document.createElement('div');
       card.className = "p-4 hover:bg-gray-50 cursor-pointer";
+      // Create a flex container with spell info on the left and the action badge on the right
       card.innerHTML = `
-        <div class="font-medium">${spell.name}</div>
-        <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-medium">${spell.name}</div>
+            <div class="text-sm text-gray-600 mt-1">${spell.traits ? spell.traits.join(', ') : ''}</div>
+          </div>
+          ${getActionBadgeHtml(spell, "w-6 h-6 text-xs")}
+        </div>
       `;
       // Attach the click event directly to show spell details
       card.addEventListener('click', (e) => {
@@ -110,9 +135,12 @@ function showSpellDetails(spell) {
   const title = document.getElementById('spellTitle');
   const levelElem = document.getElementById('spellLevel');
   const details = document.getElementById('spellDetails');
+  const actionsElem = document.getElementById('spellActions');
 
   title.textContent = spell.name;
   levelElem.textContent = isCantrip(spell) ? 'Cantrip' : `Level ${spell.level}`;
+  // Update the actions badge in the modal header (using a slightly larger size)
+  actionsElem.innerHTML = getActionBadgeHtml(spell, "w-8 h-8 text-sm");
 
   // Process description to replace **text** with <strong>text</strong>
   let description = spell.description || 'No description available.';
@@ -264,7 +292,7 @@ function applyFilters() {
       if (!inName && !inTraits) return false;
     }
 
-    // New Level Filter:
+    // Level Filter:
     // Always include cantrips; for spells, include only if spell level is less than or equal to maxLevel
     if (!isCantrip(spell) && getSpellLevel(spell) > maxLevel) {
       return false;
