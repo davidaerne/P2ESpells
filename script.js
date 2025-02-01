@@ -1,4 +1,4 @@
-/ -------------------------------
+// -------------------------------
 // Data for Pathfinder Classes
 // -------------------------------
 const classData = [
@@ -84,45 +84,24 @@ function updateAssociationSelect() {
     const associationSelect = document.getElementById('associationSelect');
     const traditionContainer = document.getElementById('traditionContainer');
     const traditionSelect = document.getElementById('traditionSelect');
+
     
     if (selected === "All") {
         associationContainer.style.display = "none";
         associationSelect.innerHTML = '<option value="All">All</option>';
-        if (traditionContainer) {
-            traditionContainer.style.display = "none";
-            traditionSelect.innerHTML = '<option value="All">All</option>';
-        }
         return;
     }
 
     const classObj = classData.find(item => item.class === selected);
     let associations = [];
-    let traditions = [];
-    
     if (classObj) {
         if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traits);
         }
         if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
-            traditions = classObj.traditions;
-            associations = associations.concat(traditions);
+            associations = associations.concat(classObj.traditions);
         }
         associations = [...new Set(associations)];
-    }
-
-    // Update traditions dropdown if it exists
-    if (traditionSelect && traditions.length > 0) {
-        traditionContainer.style.display = "block";
-        traditionSelect.innerHTML = '<option value="All">All</option>';
-        traditions.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t;
-            opt.textContent = t;
-            traditionSelect.appendChild(opt);
-        });
-    } else if (traditionContainer) {
-        traditionContainer.style.display = "none";
-        traditionSelect.innerHTML = '<option value="All">All</option>';
     }
 
     if (associations.length === 1) {
@@ -145,18 +124,6 @@ function updateAssociationSelect() {
         associationContainer.style.display = "none";
         associationSelect.innerHTML = '<option value="All">All</option>';
     }
-
-    // If there's a stored value, try to set it after populating dropdowns
-    const stored = localStorage.getItem("spellFilterState");
-    if (stored) {
-        const filterState = JSON.parse(stored);
-        if (filterState.selectedAssociation) {
-            associationSelect.value = filterState.selectedAssociation;
-        }
-        if (filterState.selectedTradition && traditionSelect) {
-            traditionSelect.value = filterState.selectedTradition;
-        }
-    }
 }
 
 // -------------------------------
@@ -166,18 +133,13 @@ function updateActiveFiltersDisplay() {
     const activeContainer = document.getElementById('activeFilterDisplay');
     activeContainer.innerHTML = "";
     
-    // Class filter (with association and tradition if selected)
+    // Class filter (with association if selected)
     const selectedClass = document.getElementById('classSelect').value;
     if (selectedClass !== "All") {
         let classText = `Class: ${selectedClass}`;
         const selectedAssociation = document.getElementById('associationSelect').value;
-        const selectedTradition = document.getElementById('traditionSelect')?.value;
-        
         if (selectedAssociation !== "All") {
             classText += ` (${selectedAssociation})`;
-        }
-        if (selectedTradition && selectedTradition !== "All") {
-            classText += ` [${selectedTradition}]`;
         }
         const classTag = document.createElement('span');
         classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
@@ -185,7 +147,7 @@ function updateActiveFiltersDisplay() {
         activeContainer.appendChild(classTag);
     }
     
- // Spell Level filter
+    // Spell Level filter
     const maxLevel = document.getElementById('maxLevelSelect').value;
     if (maxLevel !== "1") { // Only show if not default
         const spellLevelTag = document.createElement('span');
@@ -229,7 +191,6 @@ function applyFilters() {
     const rangeValue = document.getElementById('rangeSelect').value.toLowerCase();
     const selectedClass = document.getElementById('classSelect').value;
     const selectedAssociation = document.getElementById('associationSelect').value.toLowerCase();
-    const selectedTradition = document.getElementById('traditionSelect')?.value.toLowerCase();
 
     filteredSpells = allSpells.filter(spell => {
         // Search Filter
@@ -265,7 +226,7 @@ function applyFilters() {
             if (!spell.range || spell.range.toLowerCase() !== rangeValue) return false;
         }
 
-        // Class, Association & Tradition Filter
+        // Class & Association Filter
         if (selectedClass !== "All") {
             const classObj = classData.find(item => item.class === selectedClass);
             let classAssociations = [];
@@ -278,10 +239,7 @@ function applyFilters() {
                 }
             }
 
-            if (selectedTradition && selectedTradition !== "all") {
-                const traditionMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedTradition);
-                if (!traditionMatch) return false;
-            } else if (selectedAssociation !== "all") {
+            if (selectedAssociation !== "all") {
                 const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
                                  (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
                 if (!assocMatch) return false;
@@ -303,8 +261,51 @@ function applyFilters() {
 }
 
 // -------------------------------
-// Local Storage Functions
+// Sorting Functions
 // -------------------------------
+function initializeLevelSort(level) {
+    if (!levelSortStates[level]) {
+        levelSortStates[level] = {
+            isDesc: true,   // Start with descending sort
+            isActive: false // Track if sorting is active
+        };
+    }
+}
+
+// Update the toggle function
+function toggleLevelSort(level) {
+    initializeLevelSort(level);
+    const state = levelSortStates[level];
+    
+    if (!state.isActive) {
+        // If no sort, start with DESC
+        state.isActive = true;
+        state.isDesc = true;
+    } else if (state.isDesc) {
+        // If DESC, switch to ASC
+        state.isDesc = false;
+    } else {
+        // If ASC, clear sort
+        state.isActive = false;
+    }
+}
+
+// Update the sort function
+function sortSpellsByAction(spells, level) {
+    initializeLevelSort(level);
+    const state = levelSortStates[level];
+    
+    if (!state.isActive) {
+        return spells; // Return original order if no sort is active
+    }
+    
+    return [...spells].sort((a, b) => {
+        const aVal = parseInt(a.action, 10) || 0;
+        const bVal = parseInt(b.action, 10) || 0;
+        return state.isDesc ? bVal - aVal : aVal - bVal;
+    });
+}
+
 // -------------------------------
 // Local Storage Functions
 // -------------------------------
