@@ -6,11 +6,7 @@
   <title>P2E Spells Database</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {}
-      }
-    }
+    tailwind.config = { theme: { extend: {} } }
   </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -25,32 +21,11 @@
           </button>
         </div>
       </div>
-      
-      <!-- New Class and Association Dropdowns -->
-      <div id="classAssociationContainer" class="mb-4">
-        <div class="flex gap-4">
-          <!-- Class Dropdown -->
-          <div class="w-1/2">
-            <label for="classSelect" class="block text-sm font-medium">Class</label>
-            <select id="classSelect" class="w-full p-2 border rounded">
-              <!-- Options will be populated by JavaScript -->
-            </select>
-          </div>
-          <!-- Association Dropdown (initially hidden) -->
-          <div id="associationContainer" class="w-1/2" style="display: none;">
-            <label for="associationSelect" class="block text-sm font-medium">Association</label>
-            <select id="associationSelect" class="w-full p-2 border rounded">
-              <option value="All">All</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       <!-- Active filters display -->
       <div id="activeFilterDisplay" class="mt-2 flex flex-wrap gap-2"></div>
     </header>
-
-    <!-- Filter Modal (existing filters) -->
+    
+    <!-- Filter Modal -->
     <div id="filterModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
       <div class="bg-white rounded-lg max-w-md w-full p-6">
         <div class="flex justify-between items-center mb-4">
@@ -58,38 +33,34 @@
           <button id="closeFilterBtn" class="text-gray-500 hover:text-gray-700">×</button>
         </div>
         <div class="space-y-4">
-          <!-- Existing filter inputs (Search, Type, Sort, Traditions, Max Level, Actions, Range) -->
           <!-- Search -->
           <div>
             <label class="block mb-2 text-sm font-medium">Search</label>
             <input type="text" id="searchInput" class="w-full p-2 border rounded" placeholder="Search spells..." />
           </div>
-          <!-- Type -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Type</label>
-            <select id="typeSelect" class="w-full p-2 border rounded">
-              <option value="All">All</option>
-              <option value="Spell">Spells</option>
-              <option value="Cantrip">Cantrips</option>
-            </select>
-          </div>
-          <!-- Sort -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Sort By</label>
-            <select id="sortSelect" class="w-full p-2 border rounded">
-              <option value="Level">Level</option>
-              <option value="Name">Name</option>
-            </select>
-          </div>
-          <!-- Traditions -->
+          <!-- Traditions Dropdown (fixed 4 traditions) -->
           <div>
             <label class="block mb-2 text-sm font-medium">Traditions</label>
-            <select id="traditionsSelect" class="w-full p-2 border rounded" multiple size="4">
-              <option value="Divine">Divine</option>
-              <option value="Oracle">Oracle</option>
-              <option value="Arcane">Arcane</option>
-              <option value="Primal">Primal</option>
-              <option value="Occult">Occult</option>
+            <select id="traditionsSelect" class="w-full p-2 border rounded">
+              <option value="All">All</option>
+              <option value="arcane">Arcane</option>
+              <option value="primal">Primal</option>
+              <option value="divine">Divine</option>
+              <option value="occult">Occult</option>
+            </select>
+          </div>
+          <!-- Class Dropdown -->
+          <div>
+            <label class="block mb-2 text-sm font-medium">Class</label>
+            <select id="classSelect" class="w-full p-2 border rounded">
+              <!-- Options populated via JavaScript -->
+            </select>
+          </div>
+          <!-- Association Dropdown (shown conditionally) -->
+          <div id="associationContainer" style="display: none;">
+            <label class="block mb-2 text-sm font-medium">Association</label>
+            <select id="associationSelect" class="w-full p-2 border rounded">
+              <option value="All">All</option>
             </select>
           </div>
           <!-- Max Level -->
@@ -108,7 +79,7 @@
               <option value="10">10</option>
             </select>
           </div>
-          <!-- Actions Filter -->
+          <!-- Actions Dropdown -->
           <div>
             <label class="block mb-2 text-sm font-medium">Actions</label>
             <select id="actionsSelect" class="w-full p-2 border rounded">
@@ -118,7 +89,7 @@
               <option value="3">3</option>
             </select>
           </div>
-          <!-- Range Filter -->
+          <!-- Range Dropdown (ordered logically) -->
           <div>
             <label class="block mb-2 text-sm font-medium">Range</label>
             <select id="rangeSelect" class="w-full p-2 border rounded">
@@ -140,8 +111,8 @@
         </div>
       </div>
     </div>
-
-    <!-- Spell Detail Modal (unchanged) -->
+    
+    <!-- Spell Detail Modal -->
     <div id="spellModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
       <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
@@ -159,7 +130,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Main Content -->
     <main id="spellContainer" class="space-y-4">
       <div class="text-center py-8 text-gray-600">Loading spells...</div>
