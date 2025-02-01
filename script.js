@@ -394,7 +394,7 @@ function applyFilters() {
 // -------------------------------
 // Global variable for sorting by Actions
 // -------------------------------
-let actionSortAsc = true;
+// let actionSortAsc = true;
 
 // -------------------------------
 // Event Listeners Setup
