@@ -313,7 +313,6 @@ function saveFiltersToLocalStorage() {
         rangeValue: document.getElementById('rangeSelect').value,
         selectedClass: document.getElementById('classSelect').value,
         selectedAssociation: document.getElementById('associationSelect').value,
-        selectedTradition: document.getElementById('traditionSelect')?.value || 'All' // Add this line
     };
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
@@ -327,8 +326,10 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         document.getElementById('classSelect').value = filterState.selectedClass || "All";
-        document.getElementById('associationSelect').value = filterState.selectedAssociation;
+        // Dispatch a change event to repopulate the association dropdown.
         document.getElementById('classSelect').dispatchEvent(new Event('change'));
+        document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
+
     }
     updateActiveFiltersDisplay();
 }
