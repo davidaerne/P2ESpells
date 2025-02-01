@@ -297,9 +297,19 @@ function saveFiltersToLocalStorage() {
   const rangeValue = document.getElementById('rangeSelect').value;
   const selectedClass = document.getElementById('classSelect').value;
   const selectedAssociation = document.getElementById('associationSelect').value;
-  const filterState = { searchTerm, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
+  
+  const filterState = {
+    searchTerm,
+    maxLevel,
+    actionsValue,
+    rangeValue,
+    selectedClass,
+    selectedAssociation
+  };
+  
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
+
 
 function loadFiltersFromLocalStorage() {
   const stored = localStorage.getItem("spellFilterState");
