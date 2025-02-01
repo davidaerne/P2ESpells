@@ -304,7 +304,6 @@ function updateActiveFiltersDisplay() {
     const actionsTag = document.createElement('span');
     actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
     actionsTag.innerHTML = `<span data-filter="actions-sort" class="cursor-pointer underline">Actions: ${actionsValue}</span>`;
-    activeContainer.appendChild(actionsTag);
   }
   
   // Range filter (removable)
