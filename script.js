@@ -164,13 +164,14 @@ function renderSpells() {
     spellsContainer.className = "divide-y " + (expandedLevel === level ? '' : 'hidden');
     
     // Title row with "Spell Name" and a clickable "Actions" link for sorting.
-    if (expandedLevel === level) {
-      const titleRow = document.createElement('div');
-      titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
-      titleRow.innerHTML = `<div>Spell Name</div>
-                            <div>
-                              <a href="#" class="sort-actions-link underline" data-filter="actions-sort">Actions</a>
-                            </div>`;
+if (expandedLevel === level) {
+    const titleRow = document.createElement('div');
+    titleRow.className = "bg-gray-200 px-4 py-2 flex justify-between text-sm font-semibold";
+    titleRow.innerHTML = `
+        <div>Spell Name</div>
+        <div>
+            <span class="sort-actions-link underline cursor-pointer" data-filter="actions-sort">Actions</span>
+        </div>`;
       // Event listener to toggle sort order for actions.
       titleRow.querySelector('.sort-actions-link').addEventListener('click', function(e) {
         e.preventDefault();
