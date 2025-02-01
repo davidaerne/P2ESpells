@@ -35,12 +35,26 @@
         <div class="space-y-4">
           <!-- Search -->
           <div>
-            <label class="block mb-2 text-sm font-medium">Search</label>
+            <label for="searchInput" class="block mb-2 text-sm font-medium">Search</label>
             <input type="text" id="searchInput" class="w-full p-2 border rounded" placeholder="Search spells..." />
           </div>
-          <!-- Traditions Dropdown (fixed 4 traditions) -->
+          <!-- Class Dropdown -->
           <div>
-            <label class="block mb-2 text-sm font-medium">Traditions</label>
+            <label for="classSelect" class="block mb-2 text-sm font-medium">Class</label>
+            <select id="classSelect" class="w-full p-2 border rounded">
+              <!-- Options populated via JavaScript -->
+            </select>
+          </div>
+          <!-- Association Dropdown (conditionally shown) -->
+          <div id="associationContainer" style="display: none;">
+            <label for="associationSelect" class="block mb-2 text-sm font-medium">Association</label>
+            <select id="associationSelect" class="w-full p-2 border rounded">
+              <option value="All">All</option>
+            </select>
+          </div>
+          <!-- Traditions Dropdown (fixed options) -->
+          <div>
+            <label for="traditionsSelect" class="block mb-2 text-sm font-medium">Traditions</label>
             <select id="traditionsSelect" class="w-full p-2 border rounded">
               <option value="All">All</option>
               <option value="arcane">Arcane</option>
@@ -49,23 +63,9 @@
               <option value="occult">Occult</option>
             </select>
           </div>
-          <!-- Class Dropdown -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Class</label>
-            <select id="classSelect" class="w-full p-2 border rounded">
-              <!-- Options populated via JavaScript -->
-            </select>
-          </div>
-          <!-- Association Dropdown (shown conditionally) -->
-          <div id="associationContainer" style="display: none;">
-            <label class="block mb-2 text-sm font-medium">Association</label>
-            <select id="associationSelect" class="w-full p-2 border rounded">
-              <option value="All">All</option>
-            </select>
-          </div>
           <!-- Max Level -->
           <div>
-            <label class="block mb-2 text-sm font-medium">Max Level</label>
+            <label for="maxLevelSelect" class="block mb-2 text-sm font-medium">Max Level</label>
             <select id="maxLevelSelect" class="w-full p-2 border rounded">
               <option value="1">1</option>
               <option value="2">2</option>
@@ -81,7 +81,7 @@
           </div>
           <!-- Actions Dropdown -->
           <div>
-            <label class="block mb-2 text-sm font-medium">Actions</label>
+            <label for="actionsSelect" class="block mb-2 text-sm font-medium">Actions</label>
             <select id="actionsSelect" class="w-full p-2 border rounded">
               <option value="All">All</option>
               <option value="1">1</option>
@@ -91,7 +91,7 @@
           </div>
           <!-- Range Dropdown (ordered logically) -->
           <div>
-            <label class="block mb-2 text-sm font-medium">Range</label>
+            <label for="rangeSelect" class="block mb-2 text-sm font-medium">Range</label>
             <select id="rangeSelect" class="w-full p-2 border rounded">
               <option value="All">All</option>
               <option value="touch">touch</option>
