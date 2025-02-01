@@ -22,9 +22,9 @@ const classData = [
 // -------------------------------
 let allSpells = [];
 let filteredSpells = [];
-// Start with no group expanded.
+// Start with all groups collapsed.
 let expandedLevel = null;
-// Global sort state for actions.
+// Global sort state for actions (if needed later).
 let actionSortAsc = true;
 
 // -------------------------------
@@ -52,6 +52,16 @@ function getActionBadgeHtml(spell, sizeClass) {
     return `<span class="${sizeClass} bg-blue-600 text-white font-bold px-2 py-1">${badgeText}</span>`;
   }
   return '';
+}
+
+/**
+ * Wraps any numbers in the description that are surrounded by pipes (e.g. |1|) 
+ * in a blue circle.
+ */
+function formatActionDetails(text) {
+  return text.replace(/\|(\d+)\|/g, function(match, number) {
+    return `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`;
+  });
 }
 
 // -------------------------------
@@ -200,6 +210,8 @@ function showSpellDetails(spell) {
   actionsElem.innerHTML = 'Action Cost: ' + getActionBadgeHtml(spell, "text-sm");
   let description = spell.description || 'No description available.';
   description = description.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Apply formatting to pipe-wrapped numbers:
+  description = formatActionDetails(description);
   let detailsHtml = '';
   detailsHtml += `<div><div class="font-semibold">Traits</div><div>${spell.traits ? spell.traits.join(', ') : 'None'}</div></div>`;
   if (spell.cast && spell.cast.trim().toLowerCase() !== "to") {
@@ -228,6 +240,15 @@ function showSpellDetails(spell) {
   modal.classList.remove('hidden');
 }
 
+/**
+ * Wrap any numbers surrounded by pipes (e.g., |1|) in a blue circle.
+ */
+function formatActionDetails(text) {
+  return text.replace(/\|(\d+)\|/g, function(match, number) {
+    return `<span class="bg-blue-600 text-white rounded-full inline-flex items-center justify-center px-2 py-1 text-xs">${number}</span>`;
+  });
+}
+
 // -------------------------------
 // Active Filters Display
 // -------------------------------
@@ -235,7 +256,7 @@ function updateActiveFiltersDisplay() {
   const activeContainer = document.getElementById('activeFilterDisplay');
   activeContainer.innerHTML = "";
   
-  // First: Class (non-removable)
+  // Class filter (non-removable)
   const selectedClass = document.getElementById('classSelect').value;
   if (selectedClass !== "All") {
     let classText = `Class: ${selectedClass}`;
@@ -245,30 +266,28 @@ function updateActiveFiltersDisplay() {
     }
     const classTag = document.createElement('span');
     classTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    // Do not include a removal "×" for Class filter.
+    // No removal icon for Class.
     classTag.textContent = classText;
     activeContainer.appendChild(classTag);
   }
   
-  // Next: Spell Level (non-removable)
+  // Spell Level filter (non-removable)
   const maxLevel = document.getElementById('maxLevelSelect').value;
   const spellLevelTag = document.createElement('span');
   spellLevelTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
   spellLevelTag.textContent = "Spell Level " + maxLevel;
   activeContainer.appendChild(spellLevelTag);
   
-  // Next: Actions (clickable for sorting)
+  // Actions filter (removable)
   const actionsValue = document.getElementById('actionsSelect').value;
   if (actionsValue !== "All") {
     const actionsTag = document.createElement('span');
     actionsTag.className = "inline-flex items-center bg-blue-600 text-white px-3 py-1 rounded-full mr-2 mb-2";
-    // Remove the removal icon and set a custom data attribute for sorting.
-    actionsTag.innerHTML = `Actions: ${actionsValue}`;
-    actionsTag.setAttribute("data-filter", "actions-sort");
+    actionsTag.innerHTML = `Actions: ${actionsValue} <span class="ml-2 cursor-pointer" data-filter="actions">×</span>`;
     activeContainer.appendChild(actionsTag);
   }
   
-  // Then: Range filter (removable)
+  // Range filter (removable)
   const rangeValue = document.getElementById('rangeSelect').value;
   if (rangeValue !== "All") {
     const rangeTag = document.createElement('span');
@@ -277,7 +296,7 @@ function updateActiveFiltersDisplay() {
     activeContainer.appendChild(rangeTag);
   }
   
-  // Then: Search filter (removable)
+  // Search filter (removable)
   const searchTerm = document.getElementById('searchInput').value.trim();
   if (searchTerm !== "") {
     const searchTag = document.createElement('span');
@@ -297,19 +316,9 @@ function saveFiltersToLocalStorage() {
   const rangeValue = document.getElementById('rangeSelect').value;
   const selectedClass = document.getElementById('classSelect').value;
   const selectedAssociation = document.getElementById('associationSelect').value;
-  
-  const filterState = {
-    searchTerm,
-    maxLevel,
-    actionsValue,
-    rangeValue,
-    selectedClass,
-    selectedAssociation
-  };
-  
+  const filterState = { searchTerm, maxLevel, actionsValue, rangeValue, selectedClass, selectedAssociation };
   localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
-
 
 function loadFiltersFromLocalStorage() {
   const stored = localStorage.getItem("spellFilterState");
@@ -320,6 +329,8 @@ function loadFiltersFromLocalStorage() {
     document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
     document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
     document.getElementById('classSelect').value = filterState.selectedClass || "All";
+    // Trigger change event so that the association dropdown is repopulated.
+    document.getElementById('classSelect').dispatchEvent(new Event('change'));
     document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
   }
   updateActiveFiltersDisplay();
@@ -402,11 +413,6 @@ function applyFilters() {
 }
 
 // -------------------------------
-// Global variable for sorting by Actions
-// -------------------------------
-// let actionSortAsc = true;
-
-// -------------------------------
 // Event Listeners Setup
 // -------------------------------
 function setupEventListeners() {
@@ -433,7 +439,7 @@ function setupEventListeners() {
     document.getElementById('spellModal').classList.add('hidden');
   });
   
-  // Active filter tags
+  // Active filter tags (clear individual filters)
   document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
     if (e.target && e.target.getAttribute('data-filter')) {
       const filterType = e.target.getAttribute('data-filter');
@@ -442,32 +448,13 @@ function setupEventListeners() {
       } else if (filterType === 'range') {
         document.getElementById('rangeSelect').value = 'All';
       } else if (filterType === 'class') {
-        // Do nothing for Class (non-removable)
+        // Class is non-removable.
       } else if (filterType === 'association') {
         document.getElementById('associationSelect').value = 'All';
       }
       applyFilters();
-    } else if (e.target.getAttribute("data-filter") === "actions-sort") {
-      // Not used; we'll handle actions sort below.
     }
   });
-  
-  // Special handling for Actions active filter tag to toggle sort order.
-  document.getElementById('activeFilterDisplay').addEventListener('click', function(e) {
-    if (e.target && e.target.getAttribute("data-filter") === "actions-sort") {
-      actionSortAsc = !actionSortAsc;
-      // Sort filteredSpells by action cost (numerically).
-      filteredSpells.sort((a, b) => {
-        const aVal = parseInt(a.action, 10) || 0;
-        const bVal = parseInt(b.action, 10) || 0;
-        return actionSortAsc ? aVal - bVal : bVal - aVal;
-      });
-      renderSpells();
-    }
-  });
-  
-  // For the Actions active filter tag, we now set its data-filter to "actions-sort"
-  // This is done in updateActiveFiltersDisplay (see below).
   
   // Dynamic search: as you type, apply filters.
   document.getElementById('searchInput').addEventListener('input', () => {
