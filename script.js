@@ -84,45 +84,59 @@ function updateAssociationSelect() {
     const associationSelect = document.getElementById('associationSelect');
     const traditionContainer = document.getElementById('traditionContainer');
     const traditionSelect = document.getElementById('traditionSelect');
-
     
     if (selected === "All") {
         associationContainer.style.display = "none";
         associationSelect.innerHTML = '<option value="All">All</option>';
+        if (traditionContainer) {
+            traditionContainer.style.display = "none";
+            traditionSelect.innerHTML = '<option value="All">All</option>';
+        }
         return;
     }
 
     const classObj = classData.find(item => item.class === selected);
     let associations = [];
+    let traditions = [];
+    
     if (classObj) {
+        traditions = classObj.traditions || [];
         if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traits);
         }
-        if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
-            associations = associations.concat(classObj.traditions);
+        if (traditions.length > 0) {
+            associations = associations.concat(traditions);
         }
         associations = [...new Set(associations)];
     }
 
-    if (associations.length === 1) {
-        associationSelect.innerHTML = `
-            <option value="All">All</option>
-            <option value="${associations[0]}">${associations[0]}</option>
-        `;
-        associationSelect.value = associations[0];
-        associationContainer.style.display = "none";
-    } else if (associations.length > 1) {
-        associationContainer.style.display = "block";
-        associationSelect.innerHTML = '<option value="All">All</option>';
-        associations.forEach(a => {
+    // Update traditions dropdown
+    if (traditionSelect && traditions.length > 0) {
+        traditionContainer.style.display = "block";
+        traditionSelect.innerHTML = '<option value="All">All</option>';
+        traditions.forEach(t => {
             const opt = document.createElement('option');
-            opt.value = a;
-            opt.textContent = a;
-            associationSelect.appendChild(opt);
+            opt.value = t;
+            opt.textContent = t;
+            traditionSelect.appendChild(opt);
         });
-    } else {
-        associationContainer.style.display = "none";
-        associationSelect.innerHTML = '<option value="All">All</option>';
+    } else if (traditionContainer) {
+        traditionContainer.style.display = "none";
+        traditionSelect.innerHTML = '<option value="All">All</option>';
+    }
+
+    // Rest of your association select code...
+    
+    // Load stored values after populating dropdowns
+    const stored = localStorage.getItem("spellFilterState");
+    if (stored) {
+        const filterState = JSON.parse(stored);
+        if (filterState.selectedAssociation) {
+            associationSelect.value = filterState.selectedAssociation;
+        }
+        if (filterState.selectedTradition && traditionSelect) {
+            traditionSelect.value = filterState.selectedTradition;
+        }
     }
 }
 
