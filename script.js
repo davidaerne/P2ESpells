@@ -311,13 +311,15 @@ function sortSpellsByAction(spells, level) {
 // -------------------------------
 function saveFiltersToLocalStorage() {
     const filterState = {
+        searchTerm: document.getElementById('searchInput').value,
         maxLevel: document.getElementById('maxLevelSelect').value,
         actionsValue: document.getElementById('actionsSelect').value,
         rangeValue: document.getElementById('rangeSelect').value,
         selectedClass: document.getElementById('classSelect').value,
         selectedAssociation: document.getElementById('associationSelect').value,
-        selectedTradition: document.getElementById('traditionSelect')?.value   // Add this line
+        selectedTradition: document.getElementById('traditionSelect')?.value || 'All'
     };
+    console.log('Saving filter state:', filterState); // Add this for debugging
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
