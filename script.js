@@ -325,23 +325,36 @@ function loadFiltersFromLocalStorage() {
     const stored = localStorage.getItem("spellFilterState");
     if (stored) {
         const filterState = JSON.parse(stored);
-
+        
+        // Load basic filters first
         document.getElementById('searchInput').value = filterState.searchTerm || "";
         document.getElementById('maxLevelSelect').value = filterState.maxLevel || "1";
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
-        document.getElementById('classSelect').value = filterState.selectedClass || "All";
-
-        // ✅ Ensure the Association Dropdown updates correctly
+        
+        // Set class first and trigger change event
+        const classSelect = document.getElementById('classSelect');
+        classSelect.value = filterState.selectedClass || "All";
+        classSelect.dispatchEvent(new Event('change'));
+        
+        // Use setTimeout to ensure dropdowns are populated before setting values
         setTimeout(() => {
-            updateAssociationSelect(); // Update the Association dropdown first
-            document.getElementById('associationSelect').value = filterState.selectedAssociation || "All";
-
-            // ✅ Apply filters immediately so they affect the spell list
+            // Set association
+            const associationSelect = document.getElementById('associationSelect');
+            if (associationSelect && filterState.selectedAssociation) {
+                associationSelect.value = filterState.selectedAssociation;
+            }
+            
+            // Set tradition
+            const traditionSelect = document.getElementById('traditionSelect');
+            if (traditionSelect && filterState.selectedTradition) {
+                traditionSelect.value = filterState.selectedTradition;
+            }
+            
+            // Apply filters after all values are set
             applyFilters();
-        }, 50); // Small delay to ensure dropdown updates before setting value
+        }, 100);
     }
-
     updateActiveFiltersDisplay();
 }
 
