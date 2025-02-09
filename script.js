@@ -357,7 +357,7 @@ async function loadFiltersFromLocalStorage() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     populateClassSelect();
-    await loadFiltersFromLocalStorage();
+    await loadFiltersFromLocalStorage();  // load filters and set association correctly
     setupEventListeners();
     await fetchSpells();
     
