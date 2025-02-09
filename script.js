@@ -337,40 +337,26 @@ function loadFiltersFromLocalStorage() {
         // Set class first and trigger change event
         const classSelect = document.getElementById('classSelect');
         classSelect.value = filterState.selectedClass || "All";
-        
-        // We need to ensure the class change event completes before setting other values
         classSelect.dispatchEvent(new Event('change'));
         
-        // Use a longer timeout and multiple checks to ensure dropdowns are populated
-        const maxAttempts = 5;
-        let attempts = 0;
-        
-        const trySetValues = () => {
-            attempts++;
+        // Use setTimeout to ensure dropdowns are populated before setting values
+        setTimeout(() => {
+            // Set association
             const associationSelect = document.getElementById('associationSelect');
-            const traditionSelect = document.getElementById('traditionSelect');
-            
-            if (associationSelect && traditionSelect) {
-                // Set association
-                if (filterState.selectedAssociation) {
-                    associationSelect.value = filterState.selectedAssociation;
-                }
-                
-                // Set tradition
-                if (filterState.selectedTradition) {
-                    traditionSelect.value = filterState.selectedTradition;
-                }
-                
-                // Apply filters after all values are set
-                applyFilters();
-            } else if (attempts < maxAttempts) {
-                // Try again in 100ms if elements aren't ready yet
-                setTimeout(trySetValues, 100);
+            if (associationSelect && filterState.selectedAssociation) {
+                associationSelect.value = filterState.selectedAssociation;
             }
-        };
-        
-        // Start the first attempt after a short delay
-        setTimeout(trySetValues, 100);
+            
+            // Set tradition
+            const traditionSelect = document.getElementById('traditionSelect');
+            if (traditionSelect && filterState.selectedTradition) {
+                traditionSelect.value = filterState.selectedTradition;
+            }
+            
+            // Apply filters after all values are set
+            applyFilters();
+        }, 100);
+    }
     updateActiveFiltersDisplay();
 }
 
