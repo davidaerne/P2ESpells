@@ -339,14 +339,18 @@ function loadFiltersFromLocalStorage() {
         classSelect.value = filterState.selectedClass || "All";
         classSelect.dispatchEvent(new Event('change'));
         
-        // Give time for the association select to be populated after class change
+        // Use setTimeout to ensure dropdowns are populated before setting values
         setTimeout(() => {
+            // Set association
             const associationSelect = document.getElementById('associationSelect');
             if (associationSelect && filterState.selectedAssociation) {
                 associationSelect.value = filterState.selectedAssociation;
-                applyFilters();
             }
+            
+            // Always apply filters regardless of association status
+            applyFilters();
         }, 100);
+    }
     updateActiveFiltersDisplay();
 }
 
