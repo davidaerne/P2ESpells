@@ -321,7 +321,7 @@ async function loadFiltersFromLocalStorage() {
     if (stored) {
         const filterState = JSON.parse(stored);
         
-        // Load basic filters first
+        // Load basic filters
         document.getElementById('searchInput').value = filterState.searchTerm || "";
         document.getElementById('maxLevelSelect').value = filterState.maxLevel || "1";
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
@@ -331,27 +331,29 @@ async function loadFiltersFromLocalStorage() {
         const classSelect = document.getElementById('classSelect');
         if (filterState.selectedClass) {
             classSelect.value = filterState.selectedClass;
-            // Update the association dropdown
             updateAssociationSelect();
             
-            // Give the DOM time to update
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            // Now set the association value if it exists
-            const associationSelect = document.getElementById('associationSelect');
-            if (associationSelect && filterState.selectedAssociation) {
-                associationSelect.value = filterState.selectedAssociation;
-                
-                // Wait another tick to ensure the association value is set
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
+            // Use requestAnimationFrame to wait for the DOM update
+            requestAnimationFrame(() => {
+                const associationSelect = document.getElementById('associationSelect');
+                if (associationSelect && filterState.selectedAssociation) {
+                    associationSelect.value = filterState.selectedAssociation;
+                }
+                // On the next frame, apply filters
+                requestAnimationFrame(() => {
+                    applyFilters();
+                    updateActiveFiltersDisplay();
+                });
+            });
+            return;
         }
     }
     
-    // Apply filters and update display
+    // Fallback if no stored state
     applyFilters();
     updateActiveFiltersDisplay();
 }
+
 
 // Also update the initialization to wait for filters to load before fetching spells
 document.addEventListener('DOMContentLoaded', async () => {
