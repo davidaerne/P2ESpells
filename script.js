@@ -82,6 +82,9 @@ function updateAssociationSelect() {
     const selected = document.getElementById('classSelect').value;
     const associationContainer = document.getElementById('associationContainer');
     const associationSelect = document.getElementById('associationSelect');
+    const traditionContainer = document.getElementById('traditionContainer');
+    const traditionSelect = document.getElementById('traditionSelect');
+
     
     if (selected === "All") {
         associationContainer.style.display = "none";
@@ -98,22 +101,29 @@ function updateAssociationSelect() {
         if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traditions);
         }
-        associations = [...new Set(associations)].sort();
+        associations = [...new Set(associations)];
     }
 
-    // Always show the association container for valid classes
-    associationContainer.style.display = "block";
-    
-    // Always include "All" option
-    associationSelect.innerHTML = '<option value="All">All</option>';
-    
-    // Add all available associations
-    associations.forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a;
-        opt.textContent = a;
-        associationSelect.appendChild(opt);
-    });
+    if (associations.length === 1) {
+        associationSelect.innerHTML = `
+            <option value="All">All</option>
+            <option value="${associations[0]}">${associations[0]}</option>
+        `;
+        associationSelect.value = associations[0];
+        associationContainer.style.display = "none";
+    } else if (associations.length > 1) {
+        associationContainer.style.display = "block";
+        associationSelect.innerHTML = '<option value="All">All</option>';
+        associations.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a;
+            opt.textContent = a;
+            associationSelect.appendChild(opt);
+        });
+    } else {
+        associationContainer.style.display = "none";
+        associationSelect.innerHTML = '<option value="All">All</option>';
+    }
 }
 
 // -------------------------------
@@ -229,30 +239,15 @@ function applyFilters() {
                 }
             }
 
-            // First check if a specific association is selected
             if (selectedAssociation !== "all") {
-                const spellTraditions = (spell.traditions || []).map(t => t.toLowerCase());
-                const spellTraits = (spell.traits || []).map(t => t.toLowerCase());
-                
-                // Check if the spell has the selected association in either traditions or traits
-                if (!spellTraditions.includes(selectedAssociation) && 
-                    !spellTraits.includes(selectedAssociation)) {
-                    return false;
-                }
+                const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
+                                 (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
+                if (!assocMatch) return false;
             } else {
-                // If no specific association selected, check against class associations
                 if (classAssociations.length > 0) {
-                    const spellTraditions = (spell.traditions || []).map(t => t.toLowerCase());
-                    const spellTraits = (spell.traits || []).map(t => t.toLowerCase());
-                    
-                    // Check if the spell has any of the class associations
-                    const hasMatchingAssociation = classAssociations.some(assoc => 
-                        spellTraditions.includes(assoc) || spellTraits.includes(assoc)
-                    );
-                    
-                    if (!hasMatchingAssociation) {
-                        return false;
-                    }
+                    const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
+                                         (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
+                    if (!hasAssociation) return false;
                 }
             }
         }
@@ -263,6 +258,18 @@ function applyFilters() {
     saveFiltersToLocalStorage();
     updateActiveFiltersDisplay(); 
     renderSpells();
+}
+
+// -------------------------------
+// Sorting Functions
+// -------------------------------
+function initializeLevelSort(level) {
+    if (!levelSortStates[level]) {
+        levelSortStates[level] = {
+            isDesc: true,   // Start with descending sort
+            isActive: false // Track if sorting is active
+        };
+    }
 }
 
 // Update the toggle function
@@ -316,7 +323,7 @@ function saveFiltersToLocalStorage() {
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
-async function loadFiltersFromLocalStorage() {
+function loadFiltersFromLocalStorage() {
     const stored = localStorage.getItem("spellFilterState");
     if (stored) {
         const filterState = JSON.parse(stored);
@@ -327,46 +334,45 @@ async function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         
-        // Set class and update associations
+        // Set class first and trigger change event
         const classSelect = document.getElementById('classSelect');
-        if (filterState.selectedClass) {
-            classSelect.value = filterState.selectedClass;
-            // Update the association dropdown
-            updateAssociationSelect();
-            
-            // Give the DOM time to update
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            // Now set the association value if it exists
+        classSelect.value = filterState.selectedClass || "All";
+        
+        // We need to ensure the class change event completes before setting other values
+        classSelect.dispatchEvent(new Event('change'));
+        
+        // Use a longer timeout and multiple checks to ensure dropdowns are populated
+        const maxAttempts = 5;
+        let attempts = 0;
+        
+        const trySetValues = () => {
+            attempts++;
             const associationSelect = document.getElementById('associationSelect');
-            if (associationSelect && filterState.selectedAssociation) {
-                associationSelect.value = filterState.selectedAssociation;
+            const traditionSelect = document.getElementById('traditionSelect');
+            
+            if (associationSelect && traditionSelect) {
+                // Set association
+                if (filterState.selectedAssociation) {
+                    associationSelect.value = filterState.selectedAssociation;
+                }
                 
-                // Wait another tick to ensure the association value is set
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // Set tradition
+                if (filterState.selectedTradition) {
+                    traditionSelect.value = filterState.selectedTradition;
+                }
+                
+                // Apply filters after all values are set
+                applyFilters();
+            } else if (attempts < maxAttempts) {
+                // Try again in 100ms if elements aren't ready yet
+                setTimeout(trySetValues, 100);
             }
-        }
-    }
-    
-    // Apply filters and update display
-    applyFilters();
+        };
+        
+        // Start the first attempt after a short delay
+        setTimeout(trySetValues, 100);
     updateActiveFiltersDisplay();
 }
-
-// Also update the initialization to wait for filters to load before fetching spells
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM Content Loaded');
-    populateClassSelect();
-    await loadFiltersFromLocalStorage();  // load filters and set association correctly
-    setupEventListeners();
-    await fetchSpells();
-    
-    // Restore expanded level from localStorage
-    const storedLevel = localStorage.getItem("expandedLevel");
-    if (storedLevel) {
-        expandedLevel = storedLevel;
-    }
-});
 
 
 
