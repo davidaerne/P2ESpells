@@ -82,9 +82,6 @@ function updateAssociationSelect() {
     const selected = document.getElementById('classSelect').value;
     const associationContainer = document.getElementById('associationContainer');
     const associationSelect = document.getElementById('associationSelect');
-    const traditionContainer = document.getElementById('traditionContainer');
-    const traditionSelect = document.getElementById('traditionSelect');
-
     
     if (selected === "All") {
         associationContainer.style.display = "none";
@@ -101,29 +98,22 @@ function updateAssociationSelect() {
         if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traditions);
         }
-        associations = [...new Set(associations)];
+        associations = [...new Set(associations)].sort();
     }
 
-    if (associations.length === 1) {
-        associationSelect.innerHTML = `
-            <option value="All">All</option>
-            <option value="${associations[0]}">${associations[0]}</option>
-        `;
-        associationSelect.value = associations[0];
-        associationContainer.style.display = "none";
-    } else if (associations.length > 1) {
-        associationContainer.style.display = "block";
-        associationSelect.innerHTML = '<option value="All">All</option>';
-        associations.forEach(a => {
-            const opt = document.createElement('option');
-            opt.value = a;
-            opt.textContent = a;
-            associationSelect.appendChild(opt);
-        });
-    } else {
-        associationContainer.style.display = "none";
-        associationSelect.innerHTML = '<option value="All">All</option>';
-    }
+    // Always show the association container for valid classes
+    associationContainer.style.display = "block";
+    
+    // Always include "All" option
+    associationSelect.innerHTML = '<option value="All">All</option>';
+    
+    // Add all available associations
+    associations.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        associationSelect.appendChild(opt);
+    });
 }
 
 // -------------------------------
@@ -323,7 +313,7 @@ function saveFiltersToLocalStorage() {
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
-function loadFiltersFromLocalStorage() {
+async function loadFiltersFromLocalStorage() {
     const stored = localStorage.getItem("spellFilterState");
     if (stored) {
         const filterState = JSON.parse(stored);
@@ -336,20 +326,23 @@ function loadFiltersFromLocalStorage() {
         
         // Set class first and trigger change event
         const classSelect = document.getElementById('classSelect');
-        classSelect.value = filterState.selectedClass || "All";
-        classSelect.dispatchEvent(new Event('change'));
-        
-        // Use setTimeout to ensure dropdowns are populated before setting values
-        setTimeout(() => {
-            // Set association
+        if (filterState.selectedClass) {
+            classSelect.value = filterState.selectedClass;
+            // Manually trigger the association population
+            updateAssociationSelect();
+            
+            // Wait for the next tick to ensure associations are populated
+            await new Promise(resolve => setTimeout(resolve, 0));
+            
+            // Now set the association
             const associationSelect = document.getElementById('associationSelect');
             if (associationSelect && filterState.selectedAssociation) {
                 associationSelect.value = filterState.selectedAssociation;
             }
-            
-            // Always apply filters regardless of association status
-            applyFilters();
-        }, 100);
+        }
+        
+        // Apply filters after everything is set
+        applyFilters();
     }
     updateActiveFiltersDisplay();
 }
