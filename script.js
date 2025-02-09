@@ -78,13 +78,11 @@ function populateClassSelect() {
     });
 }
 
+// First, clean up updateAssociationSelect
 function updateAssociationSelect() {
     const selected = document.getElementById('classSelect').value;
     const associationContainer = document.getElementById('associationContainer');
     const associationSelect = document.getElementById('associationSelect');
-    const traditionContainer = document.getElementById('traditionContainer');
-    const traditionSelect = document.getElementById('traditionSelect');
-
     
     if (selected === "All") {
         associationContainer.style.display = "none";
@@ -95,23 +93,18 @@ function updateAssociationSelect() {
     const classObj = classData.find(item => item.class === selected);
     let associations = [];
     if (classObj) {
+        // Combine traits and traditions into associations
         if (classObj.traits && classObj.traits[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traits);
         }
         if (classObj.traditions && classObj.traditions[0].toLowerCase() !== "none") {
             associations = associations.concat(classObj.traditions);
         }
-        associations = [...new Set(associations)];
+        associations = [...new Set(associations)].sort();
     }
 
-    if (associations.length === 1) {
-        associationSelect.innerHTML = `
-            <option value="All">All</option>
-            <option value="${associations[0]}">${associations[0]}</option>
-        `;
-        associationSelect.value = associations[0];
-        associationContainer.style.display = "none";
-    } else if (associations.length > 1) {
+    // Always show container for valid classes with associations
+    if (associations.length > 0) {
         associationContainer.style.display = "block";
         associationSelect.innerHTML = '<option value="All">All</option>';
         associations.forEach(a => {
@@ -316,14 +309,13 @@ function saveFiltersToLocalStorage() {
         actionsValue: document.getElementById('actionsSelect').value,
         rangeValue: document.getElementById('rangeSelect').value,
         selectedClass: document.getElementById('classSelect').value,
-        selectedAssociation: document.getElementById('associationSelect').value,
-        selectedTradition: document.getElementById('traditionSelect')?.value || 'All'
+        selectedAssociation: document.getElementById('associationSelect').value
     };
-    console.log('Saving filter state:', filterState); // Add this for debugging
+    console.log('Saving filter state:', filterState);
     localStorage.setItem("spellFilterState", JSON.stringify(filterState));
 }
 
-function loadFiltersFromLocalStorage() {
+async function loadFiltersFromLocalStorage() {
     const stored = localStorage.getItem("spellFilterState");
     if (stored) {
         const filterState = JSON.parse(stored);
@@ -334,32 +326,43 @@ function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         
-        // Set class first and trigger change event
+        // Set class and update associations
         const classSelect = document.getElementById('classSelect');
-        classSelect.value = filterState.selectedClass || "All";
-        classSelect.dispatchEvent(new Event('change'));
-        
-        // Use setTimeout to ensure dropdowns are populated before setting values
-        setTimeout(() => {
-            // Set association
+        if (filterState.selectedClass) {
+            classSelect.value = filterState.selectedClass;
+            // Update the association dropdown
+            updateAssociationSelect();
+            
+            // Wait for the DOM to update
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Set the association value
             const associationSelect = document.getElementById('associationSelect');
             if (associationSelect && filterState.selectedAssociation) {
                 associationSelect.value = filterState.selectedAssociation;
+                // Give the DOM time to process the change
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
-            
-            // Set tradition
-            const traditionSelect = document.getElementById('traditionSelect');
-            if (traditionSelect && filterState.selectedTradition) {
-                traditionSelect.value = filterState.selectedTradition;
-            }
-            
-            // Apply filters after all values are set
-            applyFilters();
-        }, 100);
+        }
+        // Apply filters after everything is set
+        applyFilters();
     }
     updateActiveFiltersDisplay();
 }
 
+// Update initialization to handle async loading
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded');
+    populateClassSelect();
+    await loadFiltersFromLocalStorage();
+    setupEventListeners();
+    await fetchSpells();
+    
+    const storedLevel = localStorage.getItem("expandedLevel");
+    if (storedLevel) {
+        expandedLevel = storedLevel;
+    }
+});
 
 
 // -------------------------------
