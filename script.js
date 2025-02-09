@@ -326,24 +326,23 @@ async function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         
-        // Set class and update associations
+        // Set class first and trigger change event
         const classSelect = document.getElementById('classSelect');
         if (filterState.selectedClass) {
             classSelect.value = filterState.selectedClass;
-            // Update the association dropdown
+            // Manually trigger the association population
             updateAssociationSelect();
             
-            // Wait for the DOM to update
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // Wait for the next tick to ensure associations are populated
+            await new Promise(resolve => setTimeout(resolve, 0));
             
-            // Set the association value
+            // Now set the association
             const associationSelect = document.getElementById('associationSelect');
             if (associationSelect && filterState.selectedAssociation) {
                 associationSelect.value = filterState.selectedAssociation;
-                // Give the DOM time to process the change
-                await new Promise(resolve => setTimeout(resolve, 50));
             }
         }
+        
         // Apply filters after everything is set
         applyFilters();
     }
@@ -534,6 +533,8 @@ async function fetchSpells() {
         
         allSpells = await response.json();
         filteredSpells = allSpells;
+        // Apply filters immediately after loading spells
+        applyFilters();
         renderSpells();
     } catch (err) {
         console.error('Fetch Error:', err);
