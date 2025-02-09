@@ -229,15 +229,30 @@ function applyFilters() {
                 }
             }
 
+            // First check if a specific association is selected
             if (selectedAssociation !== "all") {
-                const assocMatch = (spell.traditions || []).some(t => t.toLowerCase() === selectedAssociation) ||
-                                 (spell.traits || []).some(t => t.toLowerCase() === selectedAssociation);
-                if (!assocMatch) return false;
+                const spellTraditions = (spell.traditions || []).map(t => t.toLowerCase());
+                const spellTraits = (spell.traits || []).map(t => t.toLowerCase());
+                
+                // Check if the spell has the selected association in either traditions or traits
+                if (!spellTraditions.includes(selectedAssociation) && 
+                    !spellTraits.includes(selectedAssociation)) {
+                    return false;
+                }
             } else {
+                // If no specific association selected, check against class associations
                 if (classAssociations.length > 0) {
-                    const hasAssociation = (spell.traditions || []).some(t => classAssociations.includes(t.toLowerCase())) ||
-                                         (spell.traits || []).some(t => classAssociations.includes(t.toLowerCase()));
-                    if (!hasAssociation) return false;
+                    const spellTraditions = (spell.traditions || []).map(t => t.toLowerCase());
+                    const spellTraits = (spell.traits || []).map(t => t.toLowerCase());
+                    
+                    // Check if the spell has any of the class associations
+                    const hasMatchingAssociation = classAssociations.some(assoc => 
+                        spellTraditions.includes(assoc) || spellTraits.includes(assoc)
+                    );
+                    
+                    if (!hasMatchingAssociation) {
+                        return false;
+                    }
                 }
             }
         }
@@ -248,18 +263,6 @@ function applyFilters() {
     saveFiltersToLocalStorage();
     updateActiveFiltersDisplay(); 
     renderSpells();
-}
-
-// -------------------------------
-// Sorting Functions
-// -------------------------------
-function initializeLevelSort(level) {
-    if (!levelSortStates[level]) {
-        levelSortStates[level] = {
-            isDesc: true,   // Start with descending sort
-            isActive: false // Track if sorting is active
-        };
-    }
 }
 
 // Update the toggle function
