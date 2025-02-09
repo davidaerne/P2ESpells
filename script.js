@@ -327,28 +327,46 @@ async function loadFiltersFromLocalStorage() {
         document.getElementById('actionsSelect').value = filterState.actionsValue || "All";
         document.getElementById('rangeSelect').value = filterState.rangeValue || "All";
         
-        // Set class first and trigger change event
+        // Set class and update associations
         const classSelect = document.getElementById('classSelect');
         if (filterState.selectedClass) {
             classSelect.value = filterState.selectedClass;
-            // Manually trigger the association population
+            // Update the association dropdown
             updateAssociationSelect();
             
-            // Wait for the next tick to ensure associations are populated
-            await new Promise(resolve => setTimeout(resolve, 0));
+            // Give the DOM time to update
+            await new Promise(resolve => setTimeout(resolve, 50));
             
-            // Now set the association
+            // Now set the association value if it exists
             const associationSelect = document.getElementById('associationSelect');
             if (associationSelect && filterState.selectedAssociation) {
                 associationSelect.value = filterState.selectedAssociation;
+                
+                // Wait another tick to ensure the association value is set
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
         }
-        
-        // Apply filters after everything is set
-        applyFilters();
     }
+    
+    // Apply filters and update display
+    applyFilters();
     updateActiveFiltersDisplay();
 }
+
+// Also update the initialization to wait for filters to load before fetching spells
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded');
+    populateClassSelect();
+    await loadFiltersFromLocalStorage();
+    setupEventListeners();
+    await fetchSpells();
+    
+    // Restore expanded level from localStorage
+    const storedLevel = localStorage.getItem("expandedLevel");
+    if (storedLevel) {
+        expandedLevel = storedLevel;
+    }
+});
 
 
 
